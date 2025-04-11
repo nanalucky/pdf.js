@@ -238,6 +238,9 @@ pdfjs-web-fonts-disabled = Šķārsteikla fonti nav aktivizāti: Navar īgult PD
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
@@ -266,4 +269,28 @@ pdfjs-web-fonts-disabled = Šķārsteikla fonti nav aktivizāti: Navar īgult PD
 
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

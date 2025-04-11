@@ -204,6 +204,9 @@ pdfjs-web-fonts-disabled = Webfonte is gedeaktiveer: kan nie PDF-fonte wat ingeb
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
@@ -232,4 +235,28 @@ pdfjs-web-fonts-disabled = Webfonte is gedeaktiveer: kan nie PDF-fonte wat ingeb
 
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

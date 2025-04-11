@@ -14,11 +14,16 @@
  */
 
 import {
+  AnnotationEditorParamsType,
   DOMSVGFactory,
   noContextMenu,
+  SignatureExtractor,
   stopEvent,
   SupportedImageMimeTypes,
 } from "pdfjs-lib";
+
+// Default height of the added signature in page coordinates.
+const DEFAULT_HEIGHT_IN_PAGE = 40;
 
 class SignatureManager {
   #addButton;
@@ -69,6 +74,10 @@ class SignatureManager {
 
   #tabButtons;
 
+  #addSignatureToolbarButton;
+
+  #loadSignaturesPromise = null;
+
   #typeInput;
 
   #currentTab = null;
@@ -77,9 +86,15 @@ class SignatureManager {
 
   #hasDescriptionChanged = false;
 
+  #eventBus;
+
   #l10n;
 
   #overlayManager;
+
+  #editDescriptionDialog;
+
+  #signatureStorage;
 
   #uiManager = null;
 
@@ -101,7 +116,6 @@ class SignatureManager {
       imagePicker,
       imagePickerLink,
       description,
-      clearDescription,
       clearButton,
       cancelButton,
       addButton,
@@ -110,13 +124,17 @@ class SignatureManager {
       saveCheckbox,
       saveContainer,
     },
+    editSignatureElements,
+    addSignatureToolbarButton,
     overlayManager,
-    l10n
+    l10n,
+    signatureStorage,
+    eventBus
   ) {
     this.#addButton = addButton;
     this.#clearButton = clearButton;
-    this.#clearDescription = clearDescription;
-    this.#description = description;
+    this.#clearDescription = description.lastElementChild;
+    this.#description = description.firstElementChild;
     this.#dialog = dialog;
     this.#drawSVG = drawSVG;
     this.#drawPlaceholder = drawPlaceholder;
@@ -129,8 +147,15 @@ class SignatureManager {
     this.#overlayManager = overlayManager;
     this.#saveCheckbox = saveCheckbox;
     this.#saveContainer = saveContainer;
+    this.#addSignatureToolbarButton = addSignatureToolbarButton;
     this.#typeInput = typeInput;
     this.#l10n = l10n;
+    this.#signatureStorage = signatureStorage;
+    this.#eventBus = eventBus;
+    this.#editDescriptionDialog = new EditDescriptionDialog(
+      editSignatureElements,
+      overlayManager
+    );
 
     SignatureManager.#l10nDescription ||= Object.freeze({
       signature: "pdfjs-editor-add-signature-description-default-when-drawing",
@@ -151,22 +176,29 @@ class SignatureManager {
     clearButton.addEventListener(
       "click",
       () => {
+        this.#reportTelemetry({
+          type: "signature",
+          action: "pdfjs.signature.clear",
+          data: {
+            type: this.#currentTab,
+          },
+        });
         this.#initTab(null);
       },
       { passive: true }
     );
-    description.addEventListener(
+    this.#description.addEventListener(
       "input",
       () => {
-        clearDescription.disabled = description.value === "";
+        this.#clearDescription.disabled = this.#description.value === "";
       },
       { passive: true }
     );
-    clearDescription.addEventListener(
+    this.#clearDescription.addEventListener(
       "click",
       () => {
         this.#description.value = "";
-        clearDescription.disabled = true;
+        this.#clearDescription.disabled = true;
       },
       { passive: true }
     );
@@ -180,6 +212,8 @@ class SignatureManager {
 
     this.#initTabButtons(typeButton, drawButton, imageButton, panels);
     imagePicker.accept = SupportedImageMimeTypes.join(",");
+
+    eventBus._on("storedsignatureschanged", this.#signaturesChanged.bind(this));
 
     overlayManager.register(dialog);
   }
@@ -226,7 +260,9 @@ class SignatureManager {
   #resetCommon() {
     this.#hasDescriptionChanged = false;
     this.#description.value = "";
-    this.#tabsToAltText.set(this.#currentTab, "");
+    if (this.#currentTab) {
+      this.#tabsToAltText.get(this.#currentTab).value = "";
+    }
   }
 
   #resetTab(name) {
@@ -256,17 +292,18 @@ class SignatureManager {
       return;
     }
     if (this.#currentTab) {
-      this.#tabsToAltText.set(this.#currentTab, this.#description.value);
+      this.#tabsToAltText.get(this.#currentTab).value = this.#description.value;
     }
     if (name) {
       this.#currentTab = name;
     }
 
+    this.#errorBar.hidden = true;
     const reset = !name;
     if (reset) {
       this.#resetCommon();
     } else {
-      this.#description.value = this.#tabsToAltText.get(this.#currentTab);
+      this.#description.value = this.#tabsToAltText.get(this.#currentTab).value;
     }
     this.#clearDescription.disabled = this.#description.value === "";
     this.#currentTabAC?.abort();
@@ -285,12 +322,11 @@ class SignatureManager {
   }
 
   #disableButtons(value) {
-    this.#clearButton.disabled = this.#addButton.disabled = !value;
-    if (value) {
-      this.#saveContainer.removeAttribute("disabled");
-    } else {
-      this.#saveContainer.setAttribute("disabled", true);
-    }
+    this.#saveCheckbox.disabled =
+      this.#clearButton.disabled =
+      this.#addButton.disabled =
+      this.#description.disabled =
+        !value;
   }
 
   #initTypeTab(reset) {
@@ -307,7 +343,8 @@ class SignatureManager {
       () => {
         const { value } = this.#typeInput;
         if (!this.#hasDescriptionChanged) {
-          this.#description.value = value;
+          this.#tabsToAltText.get("type").default = this.#description.value =
+            value;
           this.#clearDescription.disabled = value === "";
         }
         this.#disableButtons(value);
@@ -355,7 +392,7 @@ class SignatureManager {
         this.#drawCurves = {
           width: drawWidth,
           height: drawHeight,
-          thickness: this.#drawThickness.value,
+          thickness: parseInt(this.#drawThickness.value),
           curves: [],
         };
         this.#disableButtons(true);
@@ -370,6 +407,7 @@ class SignatureManager {
           this.#l10n
             .get(SignatureManager.#l10nDescription.signature)
             .then(description => {
+              this.#tabsToAltText.get("draw").default = description;
               this.#description.value ||= description;
               this.#clearDescription.disabled = this.#description.value === "";
             });
@@ -564,7 +602,7 @@ class SignatureManager {
       return;
     }
 
-    const outline = (this.#extractedSignatureData =
+    const { outline } = (this.#extractedSignatureData =
       this.#currentEditor.getFromImage(data.bitmap));
 
     if (!outline) {
@@ -581,6 +619,7 @@ class SignatureManager {
     this.#imageSVG.setAttribute("preserveAspectRatio", "xMidYMid meet");
     this.#imageSVG.append(path);
     path.setAttribute("d", outline.toSVGPath());
+    this.#tabsToAltText.get("image").default = file.name;
     if (this.#description.value === "") {
       this.#description.value = file.name || "";
       this.#clearDescription.disabled = this.#description.value === "";
@@ -605,17 +644,210 @@ class SignatureManager {
     );
   }
 
+  #reportTelemetry(data) {
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "editing",
+        data,
+      },
+    });
+  }
+
+  #addToolbarButton(signatureData, uuid, description) {
+    const { curves, areContours, thickness, width, height } = signatureData;
+    const maxDim = Math.max(width, height);
+    const outlineData = SignatureExtractor.processDrawnLines({
+      lines: {
+        curves,
+        thickness,
+        width,
+        height,
+      },
+      pageWidth: maxDim,
+      pageHeight: maxDim,
+      rotation: 0,
+      innerMargin: 0,
+      mustSmooth: false,
+      areContours,
+    });
+    if (!outlineData) {
+      return;
+    }
+
+    const { outline } = outlineData;
+    const svgFactory = new DOMSVGFactory();
+
+    const div = document.createElement("div");
+    const button = document.createElement("button");
+
+    button.addEventListener("click", () => {
+      this.#eventBus.dispatch("switchannotationeditorparams", {
+        source: this,
+        type: AnnotationEditorParamsType.CREATE,
+        value: {
+          signatureData: {
+            lines: {
+              curves,
+              thickness,
+              width,
+              height,
+            },
+            mustSmooth: false,
+            areContours,
+            description,
+            uuid,
+            heightInPage: DEFAULT_HEIGHT_IN_PAGE,
+          },
+        },
+      });
+    });
+    div.append(button);
+    div.classList.add("toolbarAddSignatureButtonContainer");
+
+    const svg = svgFactory.create(1, 1, true);
+    button.append(svg);
+
+    const span = document.createElement("span");
+    span.ariaHidden = true;
+    button.append(span);
+
+    button.classList.add("toolbarAddSignatureButton");
+    button.type = "button";
+    span.textContent = description;
+    button.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-add-saved-signature-button"
+    );
+    button.setAttribute("data-l10n-args", JSON.stringify({ description }));
+    button.tabIndex = 0;
+
+    const path = svgFactory.createElement("path");
+    svg.append(path);
+    svg.setAttribute("viewBox", outline.viewBox);
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    if (areContours) {
+      path.classList.add("contours");
+    }
+    path.setAttribute("d", outline.toSVGPath());
+
+    const deleteButton = document.createElement("button");
+    div.append(deleteButton);
+    deleteButton.classList.add("toolbarButton", "deleteButton");
+    deleteButton.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-delete-signature-button1"
+    );
+    deleteButton.type = "button";
+    deleteButton.tabIndex = 0;
+    deleteButton.addEventListener("click", async () => {
+      if (await this.#signatureStorage.delete(uuid)) {
+        div.remove();
+        this.#reportTelemetry({
+          type: "signature",
+          action: "pdfjs.signature.delete_saved",
+          data: {
+            savedCount: await this.#signatureStorage.size(),
+          },
+        });
+      }
+    });
+    const deleteSpan = document.createElement("span");
+    deleteButton.append(deleteSpan);
+    deleteSpan.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-delete-signature-button-label1"
+    );
+
+    this.#addSignatureToolbarButton.before(div);
+  }
+
+  async #signaturesChanged() {
+    const parent = this.#addSignatureToolbarButton.parentElement;
+    while (parent.firstElementChild !== this.#addSignatureToolbarButton) {
+      parent.firstElementChild.remove();
+    }
+    this.#loadSignaturesPromise = null;
+    await this.loadSignatures(/* reload = */ true);
+  }
+
   getSignature(params) {
     return this.open(params);
   }
 
+  async loadSignatures(reload = false) {
+    if (
+      !this.#addSignatureToolbarButton ||
+      (!reload && this.#addSignatureToolbarButton.previousElementSibling) ||
+      !this.#signatureStorage
+    ) {
+      return;
+    }
+
+    if (!this.#loadSignaturesPromise) {
+      // The first call of loadSignatures() starts loading the signatures.
+      // The second one will wait until the signatures are loaded in the DOM.
+      this.#loadSignaturesPromise = this.#signatureStorage
+        .getAll()
+        .then(async signatures => [
+          signatures,
+          await Promise.all(
+            Array.from(signatures.values(), ({ signatureData }) =>
+              SignatureExtractor.decompressSignature(signatureData)
+            )
+          ),
+        ]);
+      if (!reload) {
+        return;
+      }
+    }
+    const [signatures, signaturesData] = await this.#loadSignaturesPromise;
+    this.#loadSignaturesPromise = null;
+
+    let i = 0;
+    for (const [uuid, { description }] of signatures) {
+      const data = signaturesData[i++];
+      if (!data) {
+        continue;
+      }
+      data.curves = data.outlines.map(points => ({ points }));
+      delete data.outlines;
+      this.#addToolbarButton(data, uuid, description);
+    }
+  }
+
+  async renderEditButton(editor) {
+    const button = document.createElement("button");
+    button.classList.add("altText", "editDescription");
+    button.tabIndex = 0;
+    button.title = editor.description;
+    const span = document.createElement("span");
+    button.append(span);
+    span.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-add-signature-edit-button-label"
+    );
+    button.addEventListener(
+      "click",
+      () => {
+        this.#editDescriptionDialog.open(editor);
+      },
+      { passive: true }
+    );
+    return button;
+  }
+
   async open({ uiManager, editor }) {
     this.#tabsToAltText ||= new Map(
-      this.#tabButtons.keys().map(name => [name, ""])
+      this.#tabButtons.keys().map(name => [name, { value: "", default: "" }])
     );
     this.#uiManager = uiManager;
     this.#currentEditor = editor;
     this.#uiManager.removeEditListeners();
+
+    const isStorageFull = await this.#signatureStorage.isFull();
+    this.#saveContainer.classList.toggle("fullStorage", isStorageFull);
+    this.#saveCheckbox.checked = !isStorageFull;
 
     await this.#overlayManager.open(this.#dialog);
 
@@ -629,9 +861,7 @@ class SignatureManager {
   }
 
   #finish() {
-    if (this.#overlayManager.active === this.#dialog) {
-      this.#overlayManager.close(this.#dialog);
-    }
+    this.#overlayManager.closeIfActive(this.#dialog);
   }
 
   #close() {
@@ -653,9 +883,10 @@ class SignatureManager {
     this.#tabsToAltText = null;
   }
 
-  #add() {
+  async #add() {
     let data;
-    switch (this.#currentTab) {
+    const type = this.#currentTab;
+    switch (type) {
       case "type":
         data = this.#getOutlineForType();
         break;
@@ -666,16 +897,170 @@ class SignatureManager {
         data = this.#extractedSignatureData;
         break;
     }
-    this.#currentEditor.addSignature(data, /* heightInPage */ 40);
+    let uuid = null;
+    const description = this.#description.value;
     if (this.#saveCheckbox.checked) {
-      // TODO
+      const { newCurves, areContours, thickness, width, height } = data;
+      const signatureData = await SignatureExtractor.compressSignature({
+        outlines: newCurves,
+        areContours,
+        thickness,
+        width,
+        height,
+      });
+      uuid = await this.#signatureStorage.create({
+        description,
+        signatureData,
+      });
+      if (uuid) {
+        this.#addToolbarButton(
+          {
+            curves: newCurves.map(points => ({ points })),
+            areContours,
+            thickness,
+            width,
+            height,
+          },
+          uuid,
+          description
+        );
+      } else {
+        console.warn("SignatureManager.add: cannot save the signature.");
+      }
     }
+
+    const altText = this.#tabsToAltText.get(type);
+    this.#reportTelemetry({
+      type: "signature",
+      action: "pdfjs.signature.created",
+      data: {
+        type,
+        saved: !!uuid,
+        savedCount: await this.#signatureStorage.size(),
+        descriptionChanged: description !== altText.default,
+      },
+    });
+
+    this.#currentEditor.addSignature(
+      data,
+      DEFAULT_HEIGHT_IN_PAGE,
+      this.#description.value,
+      uuid
+    );
+
     this.#finish();
   }
 
   destroy() {
     this.#uiManager = null;
     this.#finish();
+  }
+}
+
+class EditDescriptionDialog {
+  #currentEditor;
+
+  #previousDescription;
+
+  #description;
+
+  #dialog;
+
+  #overlayManager;
+
+  #signatureSVG;
+
+  #uiManager;
+
+  constructor(
+    { dialog, description, cancelButton, updateButton, editSignatureView },
+    overlayManager
+  ) {
+    const descriptionInput = (this.#description =
+      description.firstElementChild);
+    this.#signatureSVG = editSignatureView;
+    this.#dialog = dialog;
+    this.#overlayManager = overlayManager;
+
+    dialog.addEventListener("close", this.#close.bind(this));
+    dialog.addEventListener("contextmenu", e => {
+      if (e.target !== this.#description) {
+        e.preventDefault();
+      }
+    });
+    cancelButton.addEventListener("click", this.#cancel.bind(this));
+    updateButton.addEventListener("click", this.#update.bind(this));
+
+    const clearDescription = description.lastElementChild;
+    clearDescription.addEventListener("click", () => {
+      descriptionInput.value = "";
+      clearDescription.disabled = true;
+      updateButton.disabled = this.#previousDescription === "";
+    });
+    descriptionInput.addEventListener(
+      "input",
+      () => {
+        const { value } = descriptionInput;
+        clearDescription.disabled = value === "";
+        updateButton.disabled = value === this.#previousDescription;
+        editSignatureView.setAttribute("aria-label", value);
+      },
+      { passive: true }
+    );
+
+    overlayManager.register(dialog);
+  }
+
+  async open(editor) {
+    this.#uiManager = editor._uiManager;
+    this.#currentEditor = editor;
+    this.#previousDescription = this.#description.value = editor.description;
+    this.#description.dispatchEvent(new Event("input"));
+    this.#uiManager.removeEditListeners();
+    const { areContours, outline } = editor.getSignaturePreview();
+    const svgFactory = new DOMSVGFactory();
+    const path = svgFactory.createElement("path");
+    this.#signatureSVG.append(path);
+    this.#signatureSVG.setAttribute("viewBox", outline.viewBox);
+    path.setAttribute("d", outline.toSVGPath());
+    if (areContours) {
+      path.classList.add("contours");
+    }
+
+    await this.#overlayManager.open(this.#dialog);
+  }
+
+  async #update() {
+    // The description has been changed because the button isn't disabled.
+    this.#currentEditor._reportTelemetry({
+      action: "pdfjs.signature.edit_description",
+      data: {
+        hasBeenChanged: true,
+      },
+    });
+    this.#currentEditor.description = this.#description.value;
+    this.#finish();
+  }
+
+  #cancel() {
+    this.#currentEditor._reportTelemetry({
+      action: "pdfjs.signature.edit_description",
+      data: {
+        hasBeenChanged: false,
+      },
+    });
+    this.#finish();
+  }
+
+  #finish() {
+    this.#overlayManager.closeIfActive(this.#dialog);
+  }
+
+  #close() {
+    this.#uiManager?.addEditListeners();
+    this.#uiManager = null;
+    this.#currentEditor = null;
+    this.#signatureSVG.firstElementChild.remove();
   }
 }
 

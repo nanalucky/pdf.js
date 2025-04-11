@@ -30,6 +30,25 @@ const PDF_VERSION_REGEXP = /^[1-9]\.\d$/;
 const MAX_INT_32 = 2 ** 31 - 1;
 const MIN_INT_32 = -(2 ** 31);
 
+const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
+
+const RESOURCES_KEYS_OPERATOR_LIST = [
+  "ColorSpace",
+  "ExtGState",
+  "Font",
+  "Pattern",
+  "Properties",
+  "Shading",
+  "XObject",
+];
+
+const RESOURCES_KEYS_TEXT_CONTENT = [
+  "ExtGState",
+  "Font",
+  "Properties",
+  "XObject",
+];
+
 function getLookupTableFactory(initializer) {
   let lookup;
   return function () {
@@ -722,6 +741,7 @@ export {
   getParentToUpdate,
   getRotationMatrix,
   getSizeInBytes,
+  IDENTITY_MATRIX,
   isAscii,
   isBooleanArray,
   isNumberArray,
@@ -742,6 +762,8 @@ export {
   readUint16,
   readUint32,
   recoverJsURL,
+  RESOURCES_KEYS_OPERATOR_LIST,
+  RESOURCES_KEYS_TEXT_CONTENT,
   stringToAsciiOrUTF16BE,
   stringToUTF16HexString,
   stringToUTF16String,

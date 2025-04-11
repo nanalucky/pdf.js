@@ -316,6 +316,22 @@ pdfjs-highlight-floating-button1 =
     .title = მონიშვნა
     .aria-label = მონიშვნა
 pdfjs-highlight-floating-button-label = მონიშვნა
+pdfjs-editor-signature-button =
+    .title = ხელმოწერის დამატება
+pdfjs-editor-signature-button-label = ხელმოწერის დამატება
+
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = მონიშვნის ჩასწორება
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = ნახაზის ჩასწორება
+pdfjs-editor-signature-editor =
+    .aria-label = ხელმოწერის ჩასწორება
+pdfjs-editor-stamp-editor =
+    .aria-label = სურათის ჩასწორება
 
 ## Remove button for the various kind of editor.
 
@@ -327,6 +343,8 @@ pdfjs-editor-remove-stamp-button =
     .title = სურათის მოცილება
 pdfjs-editor-remove-highlight-button =
     .title = მონიშვნის მოცილება
+pdfjs-editor-remove-signature-button =
+    .title = ხელმოწერის მოცილება
 
 ##
 
@@ -343,6 +361,16 @@ pdfjs-editor-stamp-add-image-button-label = სურათის დამა�
 pdfjs-editor-free-highlight-thickness-input = სისქე
 pdfjs-editor-free-highlight-thickness-title =
     .title = სისქის შეცვლა წარწერის გარდა სხვა ნაწილების მონიშვნისას
+pdfjs-editor-add-signature-container =
+    .aria-label = ხელმოწერის მართვა და შენახული ხელმოწერები
+pdfjs-editor-signature-add-signature-button =
+    .title = ახალი ხელმოწერის დამატება
+pdfjs-editor-signature-add-signature-button-label = ახალი ხელმოწერის დამატება
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = შენახული ხელმოწერა: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = ნაწერის ჩასწორება
@@ -453,7 +481,6 @@ pdfjs-editor-new-alt-text-error-close-button = დახურვა
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = ჩამოიტვირთება დართული წარწერის შესადეგი AI-მოდელი ({ $downloadedSize } ზომით { $totalSize } მბაიტი)
     .aria-valuetext = ჩამოიტვირთება დართული წარწერის შესადეგი AI-მოდელი ({ $downloadedSize } ზომით { $totalSize } მბაიტი)
 # This is a button that users can click to edit the alt text they have already added.
@@ -500,6 +527,7 @@ pdfjs-editor-undo-bar-message-highlight = მონიშვნა მოცი�
 pdfjs-editor-undo-bar-message-freetext = წარწერა მოცილებულია
 pdfjs-editor-undo-bar-message-ink = ნახატი მოცილებულია
 pdfjs-editor-undo-bar-message-stamp = სურათი მოცილებულია
+pdfjs-editor-undo-bar-message-signature = ხელმოწერა მოცილებულია
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +541,75 @@ pdfjs-editor-undo-bar-undo-button-label = დაბრუნება
 pdfjs-editor-undo-bar-close-button =
     .title = დახურვა
 pdfjs-editor-undo-bar-close-button-label = დახურვა
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = ეს არე საშუალებას აძლევს მომხმარებელს, შექმნას საკუთარი ხელმოწერა PDF-დოკუმენტისთვის. მომხმარებელს შეეძლება ჩაასწოროს სახელი (რომელიც დართული ტექსტის მოვალეობასაც ასრულებს) და სურვილისამებრ შეინახოს ხელმოწერა განმეორებით გამოსაყენებლად.
+pdfjs-editor-add-signature-dialog-title = ხელმოწერის დამატება
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = აკრეფა
+    .title = აკრეფა
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = მოხაზვა
+    .title = მოხაზვა
+pdfjs-editor-add-signature-image-button = სურათი
+    .title = სურათი
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = აკრიფეთ ხელმოწერა
+    .placeholder = აკრიფეთ ხელმოწერა
+pdfjs-editor-add-signature-draw-placeholder = მოხაზეთ ხელმოწერა
+pdfjs-editor-add-signature-draw-thickness-range-label = სისქე
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = მოხაზულის სისქე: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = ჩავლებით გადმოიტანეთ ასატვირთად
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] ან ამოარჩიეთ სურათებიდან
+       *[other] ან ამოარჩიეთ სურათებიდან
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = აღწერილობა (დართული ტექსტი)
+pdfjs-editor-add-signature-description-input =
+    .title = აღწერილობა (დართული ტექსტი)
+pdfjs-editor-add-signature-description-default-when-drawing = ხელმოწერა
+pdfjs-editor-add-signature-clear-button-label = ხელმოწერის წაშლა
+pdfjs-editor-add-signature-clear-button =
+    .title = ხელმოწერის წაშლა
+pdfjs-editor-add-signature-save-checkbox = ხელმოწერის შენახვა
+pdfjs-editor-add-signature-save-warning-message = მიღწეულია 5 ხელმოწერის შენახვის ზღვარი. მოაცილეთ რომელიმე ახლის შესანახად.
+pdfjs-editor-add-signature-image-upload-error-title = ვერ აიტვირთა სურათი
+pdfjs-editor-add-signature-image-upload-error-description = შეამოწმეთ ქსელთან კავშირი ან მოსინჯეთ სხვა სურათი.
+pdfjs-editor-add-signature-error-close-button = დახურვა
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = გაუქმება
+pdfjs-editor-add-signature-add-button = დამატება
+pdfjs-editor-edit-signature-update-button = განახლება
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = ხელმოწერის მოცილება
+pdfjs-editor-delete-signature-button-label = ხელმოწერის მოცილება
+pdfjs-editor-delete-signature-button1 =
+    .title = შენახული ხელმოწერის მოცილება
+pdfjs-editor-delete-signature-button-label1 = შენახული ხელმოწერის მოცილება
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = აღწერილობის ჩასწორება
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = აღწერილობის ჩასწორება

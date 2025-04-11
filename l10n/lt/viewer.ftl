@@ -260,6 +260,9 @@ pdfjs-web-fonts-disabled = Saityno šriftai išjungti – PDF faile esančių š
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
@@ -288,4 +291,28 @@ pdfjs-web-fonts-disabled = Saityno šriftai išjungti – PDF faile esančių š
 
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

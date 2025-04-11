@@ -325,6 +325,9 @@ pdfjs-highlight-floating-button1 =
     .aria-label = أبرِز
 pdfjs-highlight-floating-button-label = أبرِز
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -335,6 +338,8 @@ pdfjs-editor-remove-stamp-button =
     .title = أزِل الصورة
 pdfjs-editor-remove-highlight-button =
     .title = أزِل الإبراز
+pdfjs-editor-remove-signature-button =
+    .title = أزِل التوقيع
 
 ##
 
@@ -461,7 +466,6 @@ pdfjs-editor-new-alt-text-error-close-button = أغلق
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = يُنزّل نموذج الذكاء الاصطناعي للنص البديل ({ $downloadedSize } من { $totalSize } م.بايت)
     .aria-valuetext = يُنزّل نموذج الذكاء الاصطناعي للنص البديل ({ $downloadedSize } من { $totalSize } م.بايت)
 # This is a button that users can click to edit the alt text they have already added.
@@ -508,9 +512,84 @@ pdfjs-editor-undo-bar-message-highlight = أُزِيل البرز
 pdfjs-editor-undo-bar-message-freetext = أُزيل النص
 pdfjs-editor-undo-bar-message-ink = أُزِيلت الرسمة
 pdfjs-editor-undo-bar-message-stamp = أُزيلت الصورة
+pdfjs-editor-undo-bar-message-signature = أُزيل التوقيع
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [zero] أُزيل لا تعليق
+        [one] أُزيل تعليق
+        [two] أُزيل تعليقين
+        [few] أُزيلت { $count } تعليقات
+        [many] أُزيل { $count } تعليق
+       *[other] أُزيل { $count } تعليق
+    }
 pdfjs-editor-undo-bar-undo-button =
     .title = تراجع
 pdfjs-editor-undo-bar-undo-button-label = تراجع
 pdfjs-editor-undo-bar-close-button =
     .title = أغلق
 pdfjs-editor-undo-bar-close-button-label = أغلق
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = يتيح هذا النموذج للمستخدم إنشاء توقيع لإضافته إلى مستند PDF. ويمكن للمستخدم تحرير الاسم (الذي يعمل أيضًا كنص بديل)، وحفظ التوقيع بشكل اختياري للاستخدام المتكرر.
+pdfjs-editor-add-signature-dialog-title = أضِف توقيعا
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = اكتب
+    .title = اكتب
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = ارسم
+    .title = ارسم
+pdfjs-editor-add-signature-image-button = صورة
+    .title = صورة
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = اكتب توقيعك
+    .placeholder = اكتب توقيعك
+pdfjs-editor-add-signature-draw-placeholder = ارسم توقيعك
+pdfjs-editor-add-signature-draw-thickness-range-label = السماكة
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = سمك الرسم: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = اسحب الملف هنا لرفعه
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] أو اختر ملفات الصور
+       *[other] أو تصفح ملفات الصور
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = الوصف (نص بديل)
+pdfjs-editor-add-signature-description-input =
+    .title = الوصف (نص بديل)
+pdfjs-editor-add-signature-description-default-when-drawing = توقيع
+pdfjs-editor-add-signature-clear-button-label = امحُ التوقيع
+pdfjs-editor-add-signature-clear-button =
+    .title = امحُ التوقيع
+pdfjs-editor-add-signature-save-checkbox = احفظ التوقيع
+pdfjs-editor-add-signature-save-warning-message = لقد وصلت إلى الحد الأقصى وهو 5 توقيعات محفوظة. أزِل توقيع واحد لحفظ المزيد.
+pdfjs-editor-add-signature-image-upload-error-title = تعذر رفع الصورة.
+pdfjs-editor-add-signature-image-upload-error-description = تحقق من اتصال الشبكة لديك أو جرّب صورة أخرى.
+pdfjs-editor-add-signature-error-close-button = أغلق
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = ألغِ
+pdfjs-editor-add-signature-add-button = أضِف
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

@@ -318,6 +318,22 @@ pdfjs-highlight-floating-button1 =
     .title = Выделение
     .aria-label = Выделение
 pdfjs-highlight-floating-button-label = Выделение
+pdfjs-editor-signature-button =
+    .title = Добавить подпись
+pdfjs-editor-signature-button-label = Добавить подпись
+
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Редактор выделения
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Редактор изображений
+pdfjs-editor-signature-editor =
+    .aria-label = Редактор подписей
+pdfjs-editor-stamp-editor =
+    .aria-label = Редактор изображений
 
 ## Remove button for the various kind of editor.
 
@@ -329,6 +345,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Удалить изображение
 pdfjs-editor-remove-highlight-button =
     .title = Удалить выделение
+pdfjs-editor-remove-signature-button =
+    .title = Удалить подпись
 
 ##
 
@@ -345,6 +363,16 @@ pdfjs-editor-stamp-add-image-button-label = Добавить изображен�
 pdfjs-editor-free-highlight-thickness-input = Толщина
 pdfjs-editor-free-highlight-thickness-title =
     .title = Изменить толщину при выделении элементов, кроме текста
+pdfjs-editor-add-signature-container =
+    .aria-label = Управление подписями и сохраненные подписи
+pdfjs-editor-signature-add-signature-button =
+    .title = Добавить новую подпись
+pdfjs-editor-signature-add-signature-button-label = Добавить новую подпись
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Сохранённая подпись: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Текстовый редактор
@@ -455,7 +483,6 @@ pdfjs-editor-new-alt-text-error-close-button = Закрыть
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Загрузка модели ИИ для альтернативного текста ({ $downloadedSize } из { $totalSize } МБ)
     .aria-valuetext = Загрузка модели ИИ для альтернативного текста ({ $downloadedSize } из { $totalSize } МБ)
 # This is a button that users can click to edit the alt text they have already added.
@@ -502,6 +529,7 @@ pdfjs-editor-undo-bar-message-highlight = Выделение удалено
 pdfjs-editor-undo-bar-message-freetext = Текст удалён
 pdfjs-editor-undo-bar-message-ink = Рисунок удалён
 pdfjs-editor-undo-bar-message-stamp = Изображение удалено
+pdfjs-editor-undo-bar-message-signature = Подпись удалена
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -516,3 +544,75 @@ pdfjs-editor-undo-bar-undo-button-label = Отменить
 pdfjs-editor-undo-bar-close-button =
     .title = Закрыть
 pdfjs-editor-undo-bar-close-button-label = Закрыть
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = Это окно позволяет пользователю создать подпись для добавления в PDF-документ. Пользователь может отредактировать имя (которое также используется в качестве альтернативного текста) и, по желанию, сохранить подпись для повторного использования.
+pdfjs-editor-add-signature-dialog-title = Добавить подпись
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Ввод
+    .title = Ввод
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Рисовать
+    .title = Рисовать
+pdfjs-editor-add-signature-image-button = Изображение
+    .title = Изображение
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Введите свою подпись
+    .placeholder = Введите свою подпись
+pdfjs-editor-add-signature-draw-placeholder = Нарисуйте свою подпись
+pdfjs-editor-add-signature-draw-thickness-range-label = Толщина
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Толщина рисунка: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Перетащите сюда файл для загрузки
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Или просмотрите файлы изображений
+       *[other] Или просмотрите файлы изображений
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Описание (альтернативный текст)
+pdfjs-editor-add-signature-description-input =
+    .title = Описание (альтернативный текст)
+pdfjs-editor-add-signature-description-default-when-drawing = Подпись
+pdfjs-editor-add-signature-clear-button-label = Удалить подпись
+pdfjs-editor-add-signature-clear-button =
+    .title = Удалить подпись
+pdfjs-editor-add-signature-save-checkbox = Сохранить подпись
+pdfjs-editor-add-signature-save-warning-message = Вы достигли лимита в 5 сохранённых подписей. Удалите одну, чтобы сохранить другие.
+pdfjs-editor-add-signature-image-upload-error-title = Не удалось загрузить изображение
+pdfjs-editor-add-signature-image-upload-error-description = Проверьте подключение к сети или попробуйте другое изображение.
+pdfjs-editor-add-signature-error-close-button = Закрыть
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Отмена
+pdfjs-editor-add-signature-add-button = Добавить
+pdfjs-editor-edit-signature-update-button = Обновить
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Удалить подпись
+pdfjs-editor-delete-signature-button-label = Удалить подпись
+pdfjs-editor-delete-signature-button1 =
+    .title = Удалить сохранённую подпись
+pdfjs-editor-delete-signature-button-label1 = Удалить сохранённую подпись
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Изменить описание
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Изменить описание

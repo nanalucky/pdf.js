@@ -13,12 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  AnnotationBorderStyleType,
-  AnnotationType,
-  createValidAbsoluteUrl,
-  Util,
-} from "pdfjs-lib";
+import { AnnotationType, createValidAbsoluteUrl, Util } from "pdfjs-lib";
 import { getOriginalIndex, normalize } from "./pdf_find_controller.js";
 
 function DOMRectToPDF({ width, height, left, top }, pdfPageView) {
@@ -64,14 +59,50 @@ function calculateLinkPosition(range, pdfPageView) {
     quadPoints[i + 2] = quadPoints[i + 6] = normalized[2];
     quadPoints[i + 5] = quadPoints[i + 7] = normalized[1];
 
-    rect[0] = Math.min(rect[0], normalized[0]);
-    rect[1] = Math.min(rect[1], normalized[1]);
-    rect[2] = Math.max(rect[2], normalized[2]);
-    rect[3] = Math.max(rect[3], normalized[3]);
-
+    Util.rectBoundingBox(...normalized, rect);
     i += 8;
   }
   return { quadPoints, rect };
+}
+
+/**
+ * Given a DOM node `container` and an index into its text contents `offset`,
+ * returns a pair consisting of text node that the `offset` actually points
+ * to, together with the offset relative to that text node.
+ * When the offset points at the boundary between two node, the result will
+ * point to the first text node in depth-first traversal order.
+ *
+ * For example, given this DOM:
+ * <p>abc<span>def</span>ghi</p>
+ *
+ * textPosition(p, 0) -> [#text "abc", 0] (before `a`)
+ * textPosition(p, 2) -> [#text "abc", 2] (between `b` and `c`)
+ * textPosition(p, 3) -> [#text "abc", 3] (after `c`)
+ * textPosition(p, 5) -> [#text "def", 2] (between `e` and `f`)
+ * textPosition(p, 6) -> [#text "def", 3] (after `f`)
+ */
+function textPosition(container, offset) {
+  let currentContainer = container;
+  do {
+    if (currentContainer.nodeType === Node.TEXT_NODE) {
+      const currentLength = currentContainer.textContent.length;
+      if (offset <= currentLength) {
+        return [currentContainer, offset];
+      }
+      offset -= currentLength;
+    } else if (currentContainer.firstChild) {
+      currentContainer = currentContainer.firstChild;
+      continue;
+    }
+
+    while (!currentContainer.nextSibling && currentContainer !== container) {
+      currentContainer = currentContainer.parentNode;
+    }
+    if (currentContainer !== container) {
+      currentContainer = currentContainer.nextSibling;
+    }
+  } while (currentContainer !== container);
+  throw new Error("Offset is bigger than container's contents length.");
 }
 
 function createLinkAnnotation({ url, index, length }, pdfPageView, id) {
@@ -79,8 +110,10 @@ function createLinkAnnotation({ url, index, length }, pdfPageView, id) {
   const [{ begin, end }] = highlighter._convertMatches([index], [length]);
 
   const range = new Range();
-  range.setStart(highlighter.textDivs[begin.divIdx].firstChild, begin.offset);
-  range.setEnd(highlighter.textDivs[end.divIdx].firstChild, end.offset);
+  range.setStart(
+    ...textPosition(highlighter.textDivs[begin.divIdx], begin.offset)
+  );
+  range.setEnd(...textPosition(highlighter.textDivs[end.divIdx], end.offset));
 
   return {
     id: `inferred_link_${id}`,
@@ -89,15 +122,9 @@ function createLinkAnnotation({ url, index, length }, pdfPageView, id) {
     annotationType: AnnotationType.LINK,
     rotation: 0,
     ...calculateLinkPosition(range, pdfPageView),
-    // This is just the default for AnnotationBorderStyle.
-    borderStyle: {
-      width: 1,
-      rawWidth: 1,
-      style: AnnotationBorderStyleType.SOLID,
-      dashArray: [3],
-      horizontalCornerRadius: 0,
-      verticalCornerRadius: 0,
-    },
+    // Populated in the annotationLayer to avoid unnecessary object creation,
+    // since most inferred links overlap existing LinkAnnotations:
+    borderStyle: null,
   };
 }
 
@@ -107,31 +134,37 @@ class Autolinker {
   static #regex;
 
   static findLinks(text) {
-    // Regex can be tested and verified at https://regex101.com/r/zgDwPE/1.
+    // Regex can be tested and verified at https://regex101.com/r/rXoLiT/2.
     this.#regex ??=
-      /\b(?:https?:\/\/|mailto:|www\.)(?:[[\S--\[]--\p{P}]|\/|[\p{P}--\[]+[[\S--\[]--\p{P}])+|\b[[\S--@]--\{]+@[\S--.]+\.[[\S--\[]--\p{P}]{2,}/gmv;
+      /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|\b[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[\p{P}<>]]+(?:\.[\S--[\p{P}<>]]+)+)/gmv;
 
     const [normalizedText, diffs] = normalize(text);
     const matches = normalizedText.matchAll(this.#regex);
     const links = [];
     for (const match of matches) {
-      const raw =
-        match[0].startsWith("www.") ||
-        match[0].startsWith("mailto:") ||
-        match[0].startsWith("http://") ||
-        match[0].startsWith("https://")
-          ? match[0]
-          : `mailto:${match[0]}`;
-      const url = createValidAbsoluteUrl(raw, null, {
+      const [url, emailDomain] = match;
+      let raw;
+      if (
+        url.startsWith("www.") ||
+        url.startsWith("http://") ||
+        url.startsWith("https://")
+      ) {
+        raw = url;
+      } else if (URL.canParse(`http://${emailDomain}`)) {
+        raw = url.startsWith("mailto:") ? url : `mailto:${url}`;
+      } else {
+        continue;
+      }
+      const absoluteURL = createValidAbsoluteUrl(raw, null, {
         addDefaultProtocol: true,
       });
-      if (url) {
+      if (absoluteURL) {
         const [index, length] = getOriginalIndex(
           diffs,
           match.index,
-          match[0].length
+          url.length
         );
-        links.push({ url: url.href, index, length });
+        links.push({ url: absoluteURL.href, index, length });
       }
     }
     return links;

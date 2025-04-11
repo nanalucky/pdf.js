@@ -310,6 +310,9 @@ pdfjs-editor-stamp-button =
     .title = Добавяне или променяне на изображения
 pdfjs-editor-stamp-button-label = Добавяне или променяне на изображения
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -417,4 +420,28 @@ pdfjs-editor-new-alt-text-not-now-button = Не сега
 
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

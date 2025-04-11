@@ -80,12 +80,16 @@ class FontLoader {
     }
   }
 
-  async loadSystemFont({ systemFontInfo: info, _inspectFont }) {
+  async loadSystemFont({
+    systemFontInfo: info,
+    disableFontFace,
+    _inspectFont,
+  }) {
     if (!info || this.#systemFonts.has(info.loadedName)) {
       return;
     }
     assert(
-      !this.disableFontFace,
+      !disableFontFace,
       "loadSystemFont shouldn't be called when `disableFontFace` is set."
     );
 
@@ -351,17 +355,20 @@ class FontLoader {
 }
 
 class FontFaceObject {
-  constructor(
-    translatedData,
-    { disableFontFace = false, fontExtraProperties = false, inspectFont = null }
-  ) {
+  constructor(translatedData, inspectFont = null) {
     this.compiledGlyphs = Object.create(null);
     // importing translated data
     for (const i in translatedData) {
       this[i] = translatedData[i];
     }
-    this.disableFontFace = disableFontFace === true;
-    this.fontExtraProperties = fontExtraProperties === true;
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      if (typeof this.disableFontFace !== "boolean") {
+        unreachable("disableFontFace must be available.");
+      }
+      if (typeof this.fontExtraProperties !== "boolean") {
+        unreachable("fontExtraProperties must be available.");
+      }
+    }
     this._inspectFont = inspectFont;
   }
 

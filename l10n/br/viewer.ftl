@@ -273,6 +273,9 @@ pdfjs-editor-stamp-button =
     .title = Ouzhpennañ pe aozañ skeudennoù
 pdfjs-editor-stamp-button-label = Ouzhpennañ pe aozañ skeudennoù
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
@@ -340,4 +343,28 @@ pdfjs-editor-alt-text-settings-downloading-model-button = O pellgargañ…
 pdfjs-editor-alt-text-settings-close-button = Serriñ
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

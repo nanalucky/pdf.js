@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { shadow } from "../shared/util.js";
-import { stopEvent } from "./display_utils.js";
+import { OutputScale, stopEvent } from "./display_utils.js";
 
 class TouchManager {
   #container;
@@ -65,6 +64,10 @@ class TouchManager {
     });
   }
 
+  /**
+   * NOTE: Don't shadow this value since `devicePixelRatio` may change if the
+   * window resolution changes, e.g. if the viewer is moved to another monitor.
+   */
   get MIN_TOUCH_DISTANCE_TO_PINCH() {
     // The 35 is coming from:
     //  https://searchfox.org/mozilla-central/source/gfx/layers/apz/src/GestureEventListener.cpp#36
@@ -72,11 +75,7 @@ class TouchManager {
     // The properties TouchEvent::screenX/Y are in screen CSS pixels:
     //  https://developer.mozilla.org/en-US/docs/Web/API/Touch/screenX#examples
     // MIN_TOUCH_DISTANCE_TO_PINCH is in CSS pixels.
-    return shadow(
-      this,
-      "MIN_TOUCH_DISTANCE_TO_PINCH",
-      35 / (window.devicePixelRatio || 1)
-    );
+    return 35 / OutputScale.pixelRatio;
   }
 
   #onTouchStart(evt) {
@@ -216,9 +215,12 @@ class TouchManager {
     if (evt.touches.length >= 2) {
       return;
     }
-    this.#touchMoveAC.abort();
-    this.#touchMoveAC = null;
-    this.#onPinchEnd?.();
+    // #touchMoveAC shouldn't be null but it seems that irl it can (see #19793).
+    if (this.#touchMoveAC) {
+      this.#touchMoveAC.abort();
+      this.#touchMoveAC = null;
+      this.#onPinchEnd?.();
+    }
 
     if (!this.#touchInfo) {
       return;

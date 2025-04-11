@@ -17,6 +17,7 @@ import {
   applyFunctionToEditor,
   awaitPromise,
   cleanupEditing,
+  clearEditors,
   clearInput,
   closePages,
   copy,
@@ -29,10 +30,10 @@ import {
   getFirstSerialized,
   getRect,
   getSerialized,
+  isCanvasMonochrome,
   isVisible,
   kbBigMoveDown,
   kbBigMoveRight,
-  kbSelectAll,
   kbUndo,
   loadAndWait,
   paste,
@@ -45,9 +46,9 @@ import {
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
   waitForEntryInStorage,
+  waitForPageRendered,
   waitForSelectedEditor,
   waitForSerialized,
-  waitForStorageEntries,
   waitForTimeout,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
@@ -57,18 +58,7 @@ import { PNG } from "pngjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const selectAll = async page => {
-  await kbSelectAll(page);
-  await page.waitForFunction(
-    () => !document.querySelector(".stampEditor:not(.selectedEditor)")
-  );
-};
-
-const clearAll = async page => {
-  await selectAll(page);
-  await page.keyboard.press("Backspace");
-  await waitForStorageEntries(page, 0);
-};
+const clearAll = clearEditors.bind(null, "stamp");
 
 const waitForImage = async (page, selector) => {
   await page.waitForSelector(`${selector} canvas`);
@@ -371,9 +361,7 @@ describe("Stamp Editor", () => {
         await page.click(saveButtonSelector);
 
         // Check that the canvas has an aria-describedby attribute.
-        await page.waitForSelector(
-          `${editorSelector} canvas[aria-describedby]`
-        );
+        await page.waitForSelector(`${editorSelector}[aria-describedby]`);
 
         // Wait for the alt-text button to have the correct icon.
         await page.waitForSelector(`${buttonSelector}.done`);
@@ -1827,6 +1815,59 @@ describe("Stamp Editor", () => {
               .querySelector(".annotationEditorLayer")
               .classList.contains("stampEditing")
           );
+        })
+      );
+    });
+  });
+
+  describe("Switch to edit mode, zoom and check that the non-editable stamp is still there", () => {
+    const annotationSelector = getAnnotationSelector("14R");
+
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("red_stamp.pdf", annotationSelector, 20);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check if the canvas is still red", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          expect(
+            await isCanvasMonochrome(page, 1, null, 0xff0000ff)
+          ).toBeTrue();
+
+          await switchToStamp(page);
+
+          expect(
+            await isCanvasMonochrome(page, 1, null, 0xff0000ff)
+          ).toBeTrue();
+
+          const rectPage = await getRect(
+            page,
+            `.page[data-page-number = "1"] .annotationEditorLayer`
+          );
+
+          const handle = await waitForPageRendered(page, 1);
+          const originX = rectPage.x + rectPage.width / 2;
+          const originY = rectPage.y + rectPage.height / 2;
+          await page.evaluate(
+            origin => {
+              window.PDFViewerApplication.pdfViewer.increaseScale({
+                scaleFactor: 2,
+                origin,
+              });
+            },
+            [originX, originY]
+          );
+          await awaitPromise(handle);
+
+          expect(
+            await isCanvasMonochrome(page, 1, null, 0xff0000ff)
+          ).toBeTrue();
         })
       );
     });

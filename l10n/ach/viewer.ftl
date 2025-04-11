@@ -217,6 +217,9 @@ pdfjs-web-fonts-disabled = Kijuko dit pa coc me kakube woko: pe romo tic ki dit 
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
@@ -245,4 +248,28 @@ pdfjs-web-fonts-disabled = Kijuko dit pa coc me kakube woko: pe romo tic ki dit 
 
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

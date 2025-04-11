@@ -1421,7 +1421,7 @@ class ChoiceList extends XFAObject {
     const field = ui[$getParent]();
     const fontSize = field.font?.size || 10;
     const optionStyle = {
-      fontSize: `calc(${fontSize}px * var(--scale-factor))`,
+      fontSize: `calc(${fontSize}px * var(--total-scale-factor))`,
     };
     const children = [];
 
@@ -5721,12 +5721,7 @@ class Text extends ContentObject {
     if (typeof this[$content] === "string") {
       return this[$content]
         .split(/[\u2029\u2028\n]/)
-        .reduce((acc, line) => {
-          if (line) {
-            acc.push(line);
-          }
-          return acc;
-        }, [])
+        .filter(line => !!line)
         .join("\n");
     }
     return this[$content][$text]();
@@ -5748,18 +5743,15 @@ class Text extends ContentObject {
           .map(para =>
             // Convert a paragraph into a set of <span> (for lines)
             // separated by <br>.
-            para.split(/[\u2028\n]/).reduce((acc, line) => {
-              acc.push(
-                {
-                  name: "span",
-                  value: line,
-                },
-                {
-                  name: "br",
-                }
-              );
-              return acc;
-            }, [])
+            para.split(/[\u2028\n]/).flatMap(line => [
+              {
+                name: "span",
+                value: line,
+              },
+              {
+                name: "br",
+              },
+            ])
           )
           .forEach(lines => {
             html.children.push({

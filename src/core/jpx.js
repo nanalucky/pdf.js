@@ -31,34 +31,62 @@ class JpxImage {
 
   static #modulePromise = null;
 
+  static #useWasm = true;
+
+  static #useWorkerFetch = true;
+
   static #wasmUrl = null;
 
-  static setOptions({ handler, wasmUrl }) {
-    if (!this.#buffer) {
-      this.#wasmUrl = wasmUrl || null;
-      if (wasmUrl === null) {
-        this.#handler = handler;
-      }
+  static setOptions({ handler, useWasm, useWorkerFetch, wasmUrl }) {
+    this.#useWasm = useWasm;
+    this.#useWorkerFetch = useWorkerFetch;
+    this.#wasmUrl = wasmUrl;
+
+    if (!useWorkerFetch) {
+      this.#handler = handler;
     }
   }
 
-  static async #instantiateWasm(imports, successCallback) {
+  static async #getJsModule(fallbackCallback) {
+    const path =
+      typeof PDFJSDev === "undefined"
+        ? `../${this.#wasmUrl}openjpeg_nowasm_fallback.js`
+        : `${this.#wasmUrl}openjpeg_nowasm_fallback.js`;
+
+    let instance = null;
+    try {
+      const mod = await (typeof PDFJSDev === "undefined"
+        ? import(path) // eslint-disable-line no-unsanitized/method
+        : __raw_import__(path));
+      instance = mod.default();
+    } catch (e) {
+      warn(`JpxImage#getJsModule: ${e}`);
+    }
+    fallbackCallback(instance);
+  }
+
+  static async #instantiateWasm(fallbackCallback, imports, successCallback) {
     const filename = "openjpeg.wasm";
     try {
       if (!this.#buffer) {
-        if (this.#wasmUrl !== null) {
+        if (this.#useWorkerFetch) {
           this.#buffer = await fetchBinaryData(`${this.#wasmUrl}${filename}`);
         } else {
-          this.#buffer = await this.#handler.sendWithPromise("FetchWasm", {
-            filename,
-          });
+          this.#buffer = await this.#handler.sendWithPromise(
+            "FetchBinaryData",
+            { type: "wasmFactory", filename }
+          );
         }
       }
       const results = await WebAssembly.instantiate(this.#buffer, imports);
       return successCallback(results.instance);
+    } catch (reason) {
+      warn(`JpxImage#instantiateWasm: ${reason}`);
+
+      this.#getJsModule(fallbackCallback);
+      return null;
     } finally {
       this.#handler = null;
-      this.#wasmUrl = null;
     }
   }
 
@@ -66,12 +94,26 @@ class JpxImage {
     bytes,
     { numComponents = 4, isIndexedColormap = false, smaskInData = false } = {}
   ) {
-    this.#modulePromise ||= OpenJPEG({
-      warn,
-      instantiateWasm: this.#instantiateWasm.bind(this),
-    });
-
+    if (!this.#modulePromise) {
+      const { promise, resolve } = Promise.withResolvers();
+      const promises = [promise];
+      if (!this.#useWasm) {
+        this.#getJsModule(resolve);
+      } else {
+        promises.push(
+          OpenJPEG({
+            warn,
+            instantiateWasm: this.#instantiateWasm.bind(this, resolve),
+          })
+        );
+      }
+      this.#modulePromise = Promise.race(promises);
+    }
     const module = await this.#modulePromise;
+
+    if (!module) {
+      throw new JpxError("OpenJPEG failed to initialize");
+    }
     let ptr;
 
     try {

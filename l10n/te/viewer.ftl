@@ -225,6 +225,9 @@ pdfjs-web-fonts-disabled = వెబ్ ఫాంట్లు అచేతని
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
@@ -259,4 +262,28 @@ pdfjs-editor-ink-opacity-input = అకిరణ్యత
 
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

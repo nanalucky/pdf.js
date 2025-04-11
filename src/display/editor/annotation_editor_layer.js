@@ -621,9 +621,9 @@ class AnnotationEditorLayer {
    * @param {number} mode
    * @param {Object} params
    */
-  pasteEditor(mode, params) {
+  async pasteEditor(mode, params) {
     this.#uiManager.updateToolbar(mode);
-    this.#uiManager.updateMode(mode);
+    await this.#uiManager.updateMode(mode);
 
     const { offsetX, offsetY } = this.#getCenterPoint();
     const id = this.getNextId();
@@ -698,8 +698,12 @@ class AnnotationEditorLayer {
   /**
    * Create and add a new editor.
    */
-  addNewEditor() {
-    this.createAndAddNewEditor(this.#getCenterPoint(), /* isCentered = */ true);
+  addNewEditor(data = {}) {
+    this.createAndAddNewEditor(
+      this.#getCenterPoint(),
+      /* isCentered = */ true,
+      data
+    );
   }
 
   /**

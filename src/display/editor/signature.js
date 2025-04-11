@@ -18,6 +18,7 @@ import { DrawingEditor, DrawingOptions } from "./draw.js";
 import { AnnotationEditor } from "./editor.js";
 import { ContourDrawOutline } from "./drawers/contour.js";
 import { InkDrawingOptions } from "./ink.js";
+import { InkDrawOutline } from "./drawers/inkdraw.js";
 import { SignatureExtractor } from "./drawers/signaturedraw.js";
 
 class SignatureOptions extends DrawingOptions {
@@ -25,7 +26,7 @@ class SignatureOptions extends DrawingOptions {
     super();
 
     super.updateProperties({
-      fill: "black",
+      fill: "CanvasText",
       "stroke-width": 0,
     });
   }
@@ -42,7 +43,7 @@ class DrawnSignatureOptions extends InkDrawingOptions {
     super(viewerParameters);
 
     super.updateProperties({
-      stroke: "black",
+      stroke: "CanvasText",
       "stroke-width": 1,
     });
   }
@@ -61,6 +62,12 @@ class DrawnSignatureOptions extends InkDrawingOptions {
 class SignatureEditor extends DrawingEditor {
   #isExtracted = false;
 
+  #description = null;
+
+  #signatureData = null;
+
+  #signatureUUID = null;
+
   static _type = "signature";
 
   static _editorType = AnnotationEditorType.SIGNATURE;
@@ -70,6 +77,9 @@ class SignatureEditor extends DrawingEditor {
   constructor(params) {
     super({ ...params, mustBeCommitted: true, name: "signatureEditor" });
     this._willKeepAspectRatio = true;
+    this.#signatureData = params.signatureData || null;
+    this.#description = null;
+    this.defaultL10nId = "pdfjs-editor-signature-editor1";
   }
 
   /** @inheritdoc */
@@ -103,6 +113,22 @@ class SignatureEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
+  get telemetryFinalData() {
+    return {
+      type: "signature",
+      hasDescription: !!this.#description,
+    };
+  }
+
+  static computeTelemetryFinalData(data) {
+    const hasDescriptionStats = data.get("hasDescription");
+    return {
+      hasAltText: hasDescriptionStats.get(true) ?? 0,
+      hasNoAltText: hasDescriptionStats.get(false) ?? 0,
+    };
+  }
+
+  /** @inheritdoc */
   get isResizable() {
     return true;
   }
@@ -121,18 +147,125 @@ class SignatureEditor extends DrawingEditor {
       return this.div;
     }
 
-    super.render();
-    this.div.hidden = true;
-    this.div.setAttribute("role", "figure");
+    let baseX, baseY;
+    const { _isCopy } = this;
+    if (_isCopy) {
+      // No need to adjust the position when rendering in DrawingEditor.
+      this._isCopy = false;
+      baseX = this.x;
+      baseY = this.y;
+    }
 
-    this._uiManager.getSignature(this);
+    super.render();
+
+    if (this._drawId === null) {
+      if (this.#signatureData) {
+        const {
+          lines,
+          mustSmooth,
+          areContours,
+          description,
+          uuid,
+          heightInPage,
+        } = this.#signatureData;
+        const {
+          rawDims: { pageWidth, pageHeight },
+          rotation,
+        } = this.parent.viewport;
+        const outline = SignatureExtractor.processDrawnLines({
+          lines,
+          pageWidth,
+          pageHeight,
+          rotation,
+          innerMargin: SignatureEditor._INNER_MARGIN,
+          mustSmooth,
+          areContours,
+        });
+        this.addSignature(outline, heightInPage, description, uuid);
+      } else {
+        // Avoid Firefox crashing (with a local build) because the description
+        // parameter is missing.
+        this.div.setAttribute(
+          "data-l10n-args",
+          JSON.stringify({ description: "" })
+        );
+        this.div.hidden = true;
+        this._uiManager.getSignature(this);
+      }
+    }
+
+    if (_isCopy) {
+      this._isCopy = true;
+      this._moveAfterPaste(baseX, baseY);
+    }
 
     return this.div;
   }
 
-  addSignature(outline, heightInPage) {
+  setUuid(uuid) {
+    this.#signatureUUID = uuid;
+    this.addEditToolbar();
+  }
+
+  getUuid() {
+    return this.#signatureUUID;
+  }
+
+  get description() {
+    return this.#description;
+  }
+
+  set description(description) {
+    this.#description = description;
+    super.addEditToolbar().then(toolbar => {
+      toolbar?.updateEditSignatureButton(description);
+    });
+  }
+
+  getSignaturePreview() {
+    const { newCurves, areContours, thickness, width, height } =
+      this.#signatureData;
+    const maxDim = Math.max(width, height);
+    const outlineData = SignatureExtractor.processDrawnLines({
+      lines: {
+        curves: newCurves.map(points => ({ points })),
+        thickness,
+        width,
+        height,
+      },
+      pageWidth: maxDim,
+      pageHeight: maxDim,
+      rotation: 0,
+      innerMargin: 0,
+      mustSmooth: false,
+      areContours,
+    });
+    return { areContours, outline: outlineData.outline };
+  }
+
+  /** @inheritdoc */
+  async addEditToolbar() {
+    const toolbar = await super.addEditToolbar();
+    if (!toolbar) {
+      return null;
+    }
+    if (this._uiManager.signatureManager && this.#description !== null) {
+      await toolbar.addEditSignatureButton(
+        this._uiManager.signatureManager,
+        this.#signatureUUID,
+        this.#description
+      );
+      toolbar.show();
+    }
+    return toolbar;
+  }
+
+  addSignature(data, heightInPage, description, uuid) {
     const { x: savedX, y: savedY } = this;
+    const { outline } = (this.#signatureData = data);
     this.#isExtracted = outline instanceof ContourDrawOutline;
+    this.#description = description;
+    this.div.setAttribute("data-l10n-args", JSON.stringify({ description }));
     let drawingOptions;
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
@@ -152,6 +285,11 @@ class SignatureEditor extends DrawingEditor {
     newHeight = newHeight >= 1 ? 0.5 : newHeight;
 
     this.width *= newHeight / this.height;
+    if (this.width >= 1) {
+      newHeight *= 0.9 / this.width;
+      this.width = 0.9;
+    }
+
     this.height = newHeight;
     this.setDims(parentWidth * this.width, parentHeight * this.height);
     this.x = savedX;
@@ -162,6 +300,15 @@ class SignatureEditor extends DrawingEditor {
     this.onScaleChanging();
     this.rotate();
     this._uiManager.addToAnnotationStorage(this);
+    this.setUuid(uuid);
+
+    this._reportTelemetry({
+      action: "pdfjs.signature.inserted",
+      data: {
+        hasBeenSaved: !!uuid,
+        hasDescription: !!description,
+      },
+    });
 
     this.div.hidden = false;
   }
@@ -209,6 +356,90 @@ class SignatureEditor extends DrawingEditor {
       mustSmooth: false,
       areContours: false,
     });
+  }
+
+  /** @inheritdoc */
+  createDrawingOptions({ areContours, thickness }) {
+    if (areContours) {
+      this._drawingOptions = SignatureEditor.getDefaultDrawingOptions();
+    } else {
+      this._drawingOptions =
+        SignatureEditor._defaultDrawnSignatureOptions.clone();
+      this._drawingOptions.updateProperties({ "stroke-width": thickness });
+    }
+  }
+
+  /** @inheritdoc */
+  serialize(isForCopying = false) {
+    if (this.isEmpty()) {
+      return null;
+    }
+
+    const { lines, points, rect } = this.serializeDraw(isForCopying);
+    const {
+      _drawingOptions: { "stroke-width": thickness },
+    } = this;
+    const serialized = {
+      annotationType: AnnotationEditorType.SIGNATURE,
+      isSignature: true,
+      areContours: this.#isExtracted,
+      color: [0, 0, 0],
+      thickness: this.#isExtracted ? 0 : thickness,
+      pageIndex: this.pageIndex,
+      rect,
+      rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId,
+    };
+    if (isForCopying) {
+      serialized.paths = { lines, points };
+      serialized.uuid = this.#signatureUUID;
+      serialized.isCopy = true;
+    } else {
+      serialized.lines = lines;
+    }
+    if (this.#description) {
+      serialized.accessibilityData = { type: "Figure", alt: this.#description };
+    }
+    return serialized;
+  }
+
+  /** @inheritdoc */
+  static deserializeDraw(
+    pageX,
+    pageY,
+    pageWidth,
+    pageHeight,
+    innerMargin,
+    data
+  ) {
+    if (data.areContours) {
+      return ContourDrawOutline.deserialize(
+        pageX,
+        pageY,
+        pageWidth,
+        pageHeight,
+        innerMargin,
+        data
+      );
+    }
+
+    return InkDrawOutline.deserialize(
+      pageX,
+      pageY,
+      pageWidth,
+      pageHeight,
+      innerMargin,
+      data
+    );
+  }
+
+  /** @inheritdoc */
+  static async deserialize(data, parent, uiManager) {
+    const editor = await super.deserialize(data, parent, uiManager);
+    editor.#isExtracted = data.areContours;
+    editor.#description = data.accessibilityData?.alt || "";
+    editor.#signatureUUID = data.uuid;
+    return editor;
   }
 }
 

@@ -270,6 +270,9 @@ pdfjs-editor-ink-button =
     .title = Tiwachib'ëx
 pdfjs-editor-ink-button-label = Tiwachib'ëx
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
@@ -311,4 +314,28 @@ pdfjs-ink-canvas =
 
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

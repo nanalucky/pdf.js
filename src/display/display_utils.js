@@ -213,8 +213,7 @@ class PageViewport {
    * @type {Object}
    */
   get rawDims() {
-    const { userUnit, viewBox } = this;
-    const dims = viewBox.map(x => x * userUnit);
+    const dims = this.viewBox;
 
     return shadow(this, "rawDims", {
       pageWidth: dims[2] - dims[0],
@@ -258,7 +257,9 @@ class PageViewport {
    * @see {@link convertToViewportRectangle}
    */
   convertToViewportPoint(x, y) {
-    return Util.applyTransform([x, y], this.transform);
+    const p = [x, y];
+    Util.applyTransform(p, this.transform);
+    return p;
   }
 
   /**
@@ -269,8 +270,10 @@ class PageViewport {
    * @see {@link convertToViewportPoint}
    */
   convertToViewportRectangle(rect) {
-    const topLeft = Util.applyTransform([rect[0], rect[1]], this.transform);
-    const bottomRight = Util.applyTransform([rect[2], rect[3]], this.transform);
+    const topLeft = [rect[0], rect[1]];
+    Util.applyTransform(topLeft, this.transform);
+    const bottomRight = [rect[2], rect[3]];
+    Util.applyTransform(bottomRight, this.transform);
     return [topLeft[0], topLeft[1], bottomRight[0], bottomRight[1]];
   }
 
@@ -284,7 +287,9 @@ class PageViewport {
    * @see {@link convertToViewportPoint}
    */
   convertToPdfPoint(x, y) {
-    return Util.applyInverseTransform([x, y], this.transform);
+    const p = [x, y];
+    Util.applyInverseTransform(p, this.transform);
+    return p;
   }
 }
 
@@ -403,13 +408,9 @@ function isValidFetchUrl(url, baseUrl) {
   if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
     throw new Error("Not implemented: isValidFetchUrl");
   }
-  try {
-    const { protocol } = baseUrl ? new URL(url, baseUrl) : new URL(url);
-    // The Fetch API only supports the http/https protocols, and not file/ftp.
-    return protocol === "http:" || protocol === "https:";
-  } catch {
-    return false; // `new URL()` will throw on incorrect data.
-  }
+  const res = baseUrl ? URL.parse(url, baseUrl) : URL.parse(url);
+  // The Fetch API only supports the http/https protocols, and not file/ftp.
+  return res?.protocol === "http:" || res?.protocol === "https:";
 }
 
 /**
@@ -597,13 +598,13 @@ function setLayerDimensions(
     const { style } = div;
     const useRound = FeatureTest.isCSSRoundSupported;
 
-    const w = `var(--scale-factor) * ${pageWidth}px`,
-      h = `var(--scale-factor) * ${pageHeight}px`;
+    const w = `var(--total-scale-factor) * ${pageWidth}px`,
+      h = `var(--total-scale-factor) * ${pageHeight}px`;
     const widthStr = useRound
-        ? `round(down, ${w}, var(--scale-round-x, 1px))`
+        ? `round(down, ${w}, var(--scale-round-x))`
         : `calc(${w})`,
       heightStr = useRound
-        ? `round(down, ${h}, var(--scale-round-y, 1px))`
+        ? `round(down, ${h}, var(--scale-round-y))`
         : `calc(${h})`;
 
     if (!mustFlip || viewport.rotation % 180 === 0) {
@@ -625,7 +626,7 @@ function setLayerDimensions(
  */
 class OutputScale {
   constructor() {
-    const pixelRatio = window.devicePixelRatio || 1;
+    const { pixelRatio } = OutputScale;
 
     /**
      * @type {number} Horizontal scale.
@@ -645,8 +646,42 @@ class OutputScale {
     return this.sx !== 1 || this.sy !== 1;
   }
 
+  /**
+   * @type {boolean} Returns `true` when scaling is symmetric,
+   *   `false` otherwise.
+   */
   get symmetric() {
     return this.sx === this.sy;
+  }
+
+  /**
+   * @returns {boolean} Returns `true` if scaling was limited,
+   *   `false` otherwise.
+   */
+  limitCanvas(width, height, maxPixels, maxDim) {
+    let maxAreaScale = Infinity,
+      maxWidthScale = Infinity,
+      maxHeightScale = Infinity;
+
+    if (maxPixels > 0) {
+      maxAreaScale = Math.sqrt(maxPixels / (width * height));
+    }
+    if (maxDim !== -1) {
+      maxWidthScale = maxDim / width;
+      maxHeightScale = maxDim / height;
+    }
+    const maxScale = Math.min(maxAreaScale, maxWidthScale, maxHeightScale);
+
+    if (this.sx > maxScale || this.sy > maxScale) {
+      this.sx = maxScale;
+      this.sy = maxScale;
+      return true;
+    }
+    return false;
+  }
+
+  static get pixelRatio() {
+    return globalThis.devicePixelRatio || 1;
   }
 }
 

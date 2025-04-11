@@ -317,6 +317,9 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Derrer
 pdfjs-highlight-floating-button-label = Derrer
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -437,4 +440,28 @@ pdfjs-editor-alt-text-settings-downloading-model-button = Asader…
 pdfjs-editor-alt-text-settings-close-button = Mdel
 
 ## "Annotations removed" bar
+
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

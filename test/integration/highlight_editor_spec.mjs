@@ -16,26 +16,27 @@
 import {
   awaitPromise,
   closePages,
-  createPromise,
   getEditorSelector,
   getFirstSerialized,
   getRect,
   getSerialized,
   getSpanRectFromText,
+  getXY,
   kbBigMoveLeft,
   kbBigMoveUp,
   kbFocusNext,
   kbFocusPrevious,
   kbSave,
-  kbSelectAll,
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  selectEditors,
   setCaretAt,
   switchToEditor,
   unselectEditor,
   waitAndClick,
   waitForAnnotationModeChanged,
+  waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
   waitForTimeout,
@@ -46,24 +47,9 @@ import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const selectAll = async page => {
-  await kbSelectAll(page);
-  await page.waitForFunction(
-    () => !document.querySelector(".highlightEditor:not(.selectedEditor)")
-  );
-};
-
-const waitForPointerUp = page =>
-  createPromise(page, resolve => {
-    window.addEventListener("pointerup", resolve, { once: true });
-  });
+const selectAll = selectEditors.bind(null, "highlight");
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
-
-const getXY = async (page, selector) => {
-  const rect = await getRect(page, selector);
-  return `${rect.x}::${rect.y}`;
-};
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {
@@ -2684,6 +2670,36 @@ describe("Highlight Editor", () => {
           expect(interPage4)
             .withContext(`In ${browserName}`)
             .toBeGreaterThan(0.5 * interPage5);
+        })
+      );
+    });
+  });
+
+  describe("Highlight must be rotated when existing in the pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue19424.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that there is no scroll because of focus", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.evaluate(() => {
+            window.PDFViewerApplication.rotatePages(90);
+          });
+          await page.waitForSelector(
+            ".annotationEditorLayer[data-main-rotation='90']"
+          );
+          await switchToHighlight(page);
+
+          await page.waitForSelector(
+            ".canvasWrapper svg[data-main-rotation='90']"
+          );
         })
       );
     });

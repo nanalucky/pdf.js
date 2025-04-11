@@ -139,12 +139,11 @@
   --undo-button-bg-color-hover: rgb(21 20 26 / 0.14);
   --undo-button-bg-color-active: rgb(21 20 26 / 0.21);
 
+  --undo-button-border: 1px solid #0060df;
+
   --undo-button-fg-color: var(--message-bar-fg-color);
   --undo-button-fg-color-hover: var(--undo-button-fg-color);
   --undo-button-fg-color-active: var(--undo-button-fg-color);
-
-  --focus-ring-color: #0060df;
-  --focus-ring-outline: 2px solid var(--focus-ring-color);
 
   @media (prefers-color-scheme: dark) {
     --text-primary-color: #fbfbfe;
@@ -156,6 +155,8 @@
     --undo-button-bg-color: rgb(255 255 255 / 0.08);
     --undo-button-bg-color-hover: rgb(255 255 255 / 0.14);
     --undo-button-bg-color-active: rgb(255 255 255 / 0.21);
+
+    --undo-button-border: 1px solid #0df;
   }
 
   @media screen and (forced-colors: active) {
@@ -173,7 +174,7 @@
     --undo-button-fg-color-hover: SelectedItemText;
     --undo-button-fg-color-active: SelectedItemText;
 
-    --focus-ring-color: CanvasText;
+    --undo-button-border: none;
   }
 
   position: fixed;
@@ -199,7 +200,7 @@
     font-weight: 590;
     line-height: 19.5px;
     color: var(--undo-button-fg-color);
-    border: none;
+    border: var(--undo-button-border);
     padding: 4px 16px;
     margin-inline-start: 8px;
     height: 32px;

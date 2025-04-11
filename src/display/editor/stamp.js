@@ -56,6 +56,7 @@ class StampEditor extends AnnotationEditor {
     super({ ...params, name: "stampEditor" });
     this.#bitmapUrl = params.bitmapUrl;
     this.#bitmapFile = params.bitmapFile;
+    this.defaultL10nId = "pdfjs-editor-stamp-editor";
   }
 
   /** @inheritdoc */
@@ -346,14 +347,13 @@ class StampEditor extends AnnotationEditor {
     }
 
     let baseX, baseY;
-    if (this.width) {
+    if (this._isCopy) {
       baseX = this.x;
       baseY = this.y;
     }
 
     super.render();
     this.div.hidden = true;
-    this.div.setAttribute("role", "figure");
 
     this.addAltTextButton();
 
@@ -365,15 +365,8 @@ class StampEditor extends AnnotationEditor {
       }
     }
 
-    if (this.width && !this.annotationElementId) {
-      // This editor was created in using copy (ctrl+c).
-      const [parentWidth, parentHeight] = this.parentDimensions;
-      this.setAt(
-        baseX * parentWidth,
-        baseY * parentHeight,
-        this.width * parentWidth,
-        this.height * parentHeight
-      );
+    if (this._isCopy) {
+      this._moveAfterPaste(baseX, baseY);
     }
 
     this._uiManager.addShouldRescale(this);
@@ -481,7 +474,7 @@ class StampEditor extends AnnotationEditor {
       action: "inserted_image",
     });
     if (this.#bitmapFileName) {
-      canvas.setAttribute("aria-label", this.#bitmapFileName);
+      this.div.setAttribute("aria-description", this.#bitmapFileName);
     }
   }
 
@@ -693,11 +686,6 @@ class StampEditor extends AnnotationEditor {
     );
   }
 
-  /** @inheritdoc */
-  getImageForAltText() {
-    return this.#canvas;
-  }
-
   #serializeBitmap(toUrl) {
     if (toUrl) {
       if (this.#isSvg) {
@@ -854,6 +842,7 @@ class StampEditor extends AnnotationEditor {
       // hence we serialize the bitmap to a data url.
       serialized.bitmapUrl = this.#serializeBitmap(/* toUrl = */ true);
       serialized.accessibilityData = this.serializeAltText(true);
+      serialized.isCopy = true;
       return serialized;
     }
 

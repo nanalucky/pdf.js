@@ -68,6 +68,7 @@ class InkEditor extends DrawingEditor {
   constructor(params) {
     super({ ...params, name: "inkEditor" });
     this._willKeepAspectRatio = true;
+    this.defaultL10nId = "pdfjs-editor-ink-editor";
   }
 
   /** @inheritdoc */
@@ -246,6 +247,7 @@ class InkEditor extends DrawingEditor {
     };
 
     if (isForCopying) {
+      serialized.isCopy = true;
       return serialized;
     }
 

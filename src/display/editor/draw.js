@@ -30,7 +30,9 @@ class DrawingOptions {
       return;
     }
     for (const [name, value] of Object.entries(properties)) {
-      this.updateProperty(name, value);
+      if (!name.startsWith("_")) {
+        this.updateProperty(name, value);
+      }
     }
   }
 
@@ -278,9 +280,9 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  _onTranslating(x, y) {
+  _onTranslating(_x, _y) {
     this.parent?.drawLayer.updateProperties(this._drawId, {
-      bbox: this.#rotateBox(x, y),
+      bbox: this.#rotateBox(),
     });
   }
 
@@ -626,6 +628,12 @@ class DrawingEditor extends AnnotationEditor {
       return this.div;
     }
 
+    let baseX, baseY;
+    if (this._isCopy) {
+      baseX = this.x;
+      baseY = this.y;
+    }
+
     const div = super.render();
     div.classList.add("draw");
 
@@ -637,6 +645,10 @@ class DrawingEditor extends AnnotationEditor {
     this.setDims(this.width * parentWidth, this.height * parentHeight);
     this._uiManager.addShouldRescale(this);
     this.disableEditing();
+
+    if (this._isCopy) {
+      this._moveAfterPaste(baseX, baseY);
+    }
 
     return div;
   }
