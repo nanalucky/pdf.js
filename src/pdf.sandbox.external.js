@@ -21,9 +21,10 @@ export class SandboxSupportBase {
   /**
    * @param {DOMWindow} - win
    */
-  constructor(win) {
+  constructor(win, container) {
     this.win = win;
     this.timeoutIds = new Map();
+    this.container = container;
 
     // Will be assigned after the sandbox is initialized
     this.commFun = null;
@@ -170,7 +171,7 @@ export class SandboxSupportBase {
         const event = new this.win.CustomEvent("updatefromsandbox", {
           detail: this.importValueFromSandbox(data),
         });
-        this.win.dispatchEvent(event);
+        this.container.dispatchEvent(event);
       },
     };
     Object.setPrototypeOf(externals, null);

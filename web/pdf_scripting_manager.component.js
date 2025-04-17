@@ -21,7 +21,7 @@ class PDFScriptingManagerComponents extends PDFScriptingManager {
     // The default viewer already handles adding/removing of DOM events,
     // hence limit this to only the viewer components.
     if (!options.externalServices) {
-      window.addEventListener("updatefromsandbox", event => {
+      (options.container || window).addEventListener("updatefromsandbox", event => {
         options.eventBus.dispatch("updatefromsandbox", {
           source: window,
           detail: event.detail,
@@ -31,7 +31,11 @@ class PDFScriptingManagerComponents extends PDFScriptingManager {
 
     options.externalServices ||= {
       createScripting: () =>
-        new GenericScripting(options.sandboxBundleSrc, options.wasmUrl),
+        new GenericScripting(
+          options.sandboxBundleSrc,
+          options.wasmUrl,
+          options.container
+        ),
     };
     options.docProperties ||= pdfDocument => docProperties(pdfDocument);
     super(options);

@@ -34,7 +34,7 @@ async function docProperties(pdfDocument) {
 }
 
 class GenericScripting {
-  constructor(sandboxBundleSrc, wasmUrl) {
+  constructor(sandboxBundleSrc, wasmUrl, container) {
     this._ready = new Promise((resolve, reject) => {
       const sandbox =
         typeof PDFJSDev === "undefined"
@@ -43,7 +43,10 @@ class GenericScripting {
       sandbox
         .then(pdfjsSandbox => {
           resolve(
-            pdfjsSandbox.QuickJSSandbox(new URL(wasmUrl, location.href).href)
+            pdfjsSandbox.QuickJSSandbox(
+              new URL(wasmUrl, location.href).href,
+              container
+            )
           );
         })
         .catch(reject);

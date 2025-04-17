@@ -32,8 +32,8 @@ class SandboxSupport extends SandboxSupportBase {
 }
 
 class Sandbox {
-  constructor(win, module) {
-    this.support = new SandboxSupport(win, this);
+  constructor(win, module, container) {
+    this.support = new SandboxSupport(win, container);
 
     // The "external" functions created in pdf.sandbox.external.js
     // are finally used here:
@@ -135,12 +135,12 @@ class Sandbox {
   }
 }
 
-async function QuickJSSandbox(wasmUrl = "../web/wasm/") {
+async function QuickJSSandbox(wasmUrl = "../web/wasm/", container = window) {
   const { default: ModuleLoader } = await __raw_import__(
     `${wasmUrl}quickjs-eval.js`
   );
   const module = await ModuleLoader();
-  return new Sandbox(window, module);
+  return new Sandbox(window, module, container || window);
 }
 
 globalThis.pdfjsSandbox = {

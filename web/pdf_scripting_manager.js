@@ -368,7 +368,7 @@ class PDFScriptingManager {
 
     const ids = siblings ? [id, ...siblings] : [id];
     for (const elementId of ids) {
-      const element = document.querySelector(
+      const element = pdfViewer.container.querySelector(
         `[data-element-id="${elementId}"]`
       );
       if (element) {

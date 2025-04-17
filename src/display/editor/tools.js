@@ -1212,6 +1212,10 @@ class AnnotationEditorUIManager {
     return this.highlightColorNames.get(color) || color;
   }
 
+  get container() {
+    return this.#container;
+  }
+
   /**
    * Set the current drawing session.
    * @param {AnnotationEditorLayer} layer
