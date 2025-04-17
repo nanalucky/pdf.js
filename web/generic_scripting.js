@@ -34,7 +34,7 @@ async function docProperties(pdfDocument) {
 }
 
 class GenericScripting {
-  constructor(sandboxBundleSrc) {
+  constructor(sandboxBundleSrc, container) {
     this._ready = new Promise((resolve, reject) => {
       const sandbox =
         typeof PDFJSDev === "undefined"
@@ -42,7 +42,7 @@ class GenericScripting {
           : __raw_import__(sandboxBundleSrc);
       sandbox
         .then(pdfjsSandbox => {
-          resolve(pdfjsSandbox.QuickJSSandbox());
+          resolve(pdfjsSandbox.QuickJSSandbox(container));
         })
         .catch(reject);
     });

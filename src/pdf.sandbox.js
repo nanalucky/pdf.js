@@ -38,8 +38,8 @@ class SandboxSupport extends SandboxSupportBase {
 }
 
 class Sandbox {
-  constructor(win, module) {
-    this.support = new SandboxSupport(win, this);
+  constructor(win, module, container) {
+    this.support = new SandboxSupport(win, container);
 
     // The "external" functions created in pdf.sandbox.external.js
     // are finally used here:
@@ -141,8 +141,8 @@ class Sandbox {
   }
 }
 
-function QuickJSSandbox() {
-  return ModuleLoader().then(module => new Sandbox(window, module));
+function QuickJSSandbox(container) {
+  return ModuleLoader().then(module => new Sandbox(window, module, container || window));
 }
 
 export { QuickJSSandbox };

@@ -652,7 +652,7 @@ class AnnotationElement {
           const exportValue =
             typeof exportValues === "string" ? exportValues : null;
 
-          const domElement = document.querySelector(
+          const domElement = this._annotationEditorUIManager?.container.querySelector(
             `[data-element-id="${id}"]`
           );
           if (domElement && !GetElementsByNameSet.has(domElement)) {
@@ -666,7 +666,7 @@ class AnnotationElement {
     }
     // Fallback to a regular DOM lookup, to ensure that the standalone
     // viewer components won't break.
-    for (const domElement of document.getElementsByName(name)) {
+    for (const domElement of this._annotationEditorUIManager?.container.getElementsByName(name)) {
       const { exportValue } = domElement;
       const id = domElement.getAttribute("data-element-id");
       if (id === skipId) {
@@ -996,7 +996,7 @@ class LinkAnnotationElement extends AnnotationElement {
             continue;
         }
 
-        const domElement = document.querySelector(`[data-element-id="${id}"]`);
+        const domElement = this._annotationEditorUIManager?.container.querySelector(`[data-element-id="${id}"]`);
         if (!domElement) {
           continue;
         } else if (!GetElementsByNameSet.has(domElement)) {
