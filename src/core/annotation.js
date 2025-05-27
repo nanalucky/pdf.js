@@ -428,7 +428,7 @@ class AnnotationFactory {
     }
 
     return {
-      annotations: await Promise.all(promises),
+      annotations: (await Promise.all(promises)).flat(),
     };
   }
 
@@ -1798,7 +1798,29 @@ class MarkupAnnotation extends Annotation {
       data: annotationDict,
     });
 
-    return { ref: annotationRef };
+    const retRef = { ref: annotationRef };
+    if (annotation.popup) {
+      const popup = annotation.popup;
+      if (popup.deleted) {
+        annotationDict.delete("Popup");
+        annotationDict.delete("Contents");
+        annotationDict.delete("RC");
+        return retRef;
+      }
+      const popupRef = (popup.ref ||= xref.getNewTemporaryRef());
+      popup.parent = annotationRef;
+      const popupDict = PopupAnnotation.createNewDict(popup, xref);
+      changes.put(popupRef, { data: popupDict });
+      annotationDict.setIfDefined(
+        "Contents",
+        stringToAsciiOrUTF16BE(popup.contents)
+      );
+      annotationDict.set("Popup", popupRef);
+
+      return [retRef, { ref: popupRef }];
+    }
+
+    return retRef;
   }
 
   static async createNewPrintAnnotation(
@@ -3880,6 +3902,22 @@ class PopupAnnotation extends Annotation {
 
     this.data.open = !!dict.get("Open");
   }
+
+  static createNewDict(annotation, xref, _params) {
+    const { oldAnnotation, rect, parent } = annotation;
+    const popup = oldAnnotation || new Dict(xref);
+    popup.setIfNotExists("Type", Name.get("Annot"));
+    popup.setIfNotExists("Subtype", Name.get("Popup"));
+    popup.setIfNotExists("Open", false);
+    popup.setIfArray("Rect", rect);
+    popup.set("Parent", parent);
+
+    return popup;
+  }
+
+  static async createNewAppearanceStream(annotation, xref, params) {
+    return null;
+  }
 }
 
 class EditableAnnotation extends MarkupAnnotation {
@@ -3957,18 +3995,27 @@ class FreeTextAnnotation extends EditableAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { color, fontSize, oldAnnotation, rect, rotation, user, value } =
-      annotation;
+    const {
+      color,
+      date,
+      fontSize,
+      oldAnnotation,
+      rect,
+      rotation,
+      user,
+      value,
+    } = annotation;
     const freetext = oldAnnotation || new Dict(xref);
     freetext.setIfNotExists("Type", Name.get("Annot"));
     freetext.setIfNotExists("Subtype", Name.get("FreeText"));
+    freetext.set(
+      oldAnnotation ? "M" : "CreationDate",
+      `D:${getModificationDate(date)}`
+    );
     if (oldAnnotation) {
-      freetext.set("M", `D:${getModificationDate()}`);
       // TODO: We should try to generate a new RC from the content we've.
       // For now we can just remove it to avoid any issues.
       freetext.delete("RC");
-    } else {
-      freetext.set("CreationDate", `D:${getModificationDate()}`);
     }
     freetext.setIfArray("Rect", rect);
     const da = `/Helv ${fontSize} Tf ${getPdfColor(color, /* isFill */ true)}`;
@@ -4502,6 +4549,7 @@ class InkAnnotation extends EditableAnnotation {
     const {
       oldAnnotation,
       color,
+      date,
       opacity,
       paths,
       outlines,
@@ -4513,7 +4561,10 @@ class InkAnnotation extends EditableAnnotation {
     const ink = oldAnnotation || new Dict(xref);
     ink.setIfNotExists("Type", Name.get("Annot"));
     ink.setIfNotExists("Subtype", Name.get("Ink"));
-    ink.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate()}`);
+    ink.set(
+      oldAnnotation ? "M" : "CreationDate",
+      `D:${getModificationDate(date)}`
+    );
     ink.setIfArray("Rect", rect);
     ink.setIfArray("InkList", outlines?.points || paths?.points);
     ink.setIfNotExists("F", 4);
@@ -4740,13 +4791,23 @@ class HighlightAnnotation extends EditableAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { color, oldAnnotation, opacity, rect, rotation, user, quadPoints } =
-      annotation;
-    const date = `D:${getModificationDate()}`;
+    const {
+      color,
+      date,
+      oldAnnotation,
+      opacity,
+      rect,
+      rotation,
+      user,
+      quadPoints,
+    } = annotation;
     const highlight = oldAnnotation || new Dict(xref);
     highlight.setIfNotExists("Type", Name.get("Annot"));
     highlight.setIfNotExists("Subtype", Name.get("Highlight"));
-    highlight.set(oldAnnotation ? "M" : "CreationDate", date);
+    highlight.set(
+      oldAnnotation ? "M" : "CreationDate",
+      `D:${getModificationDate(date)}`
+    );
     highlight.setIfArray("Rect", rect);
     highlight.setIfNotExists("F", 4);
     highlight.setIfNotExists("Border", [0, 0, 0]);
@@ -5064,12 +5125,14 @@ class StampAnnotation extends EditableAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { oldAnnotation, rect, rotation, user } = annotation;
-    const date = `D:${getModificationDate(annotation.date)}`;
+    const { date, oldAnnotation, rect, rotation, user } = annotation;
     const stamp = oldAnnotation || new Dict(xref);
     stamp.setIfNotExists("Type", Name.get("Annot"));
     stamp.setIfNotExists("Subtype", Name.get("Stamp"));
-    stamp.set(oldAnnotation ? "M" : "CreationDate", date);
+    stamp.set(
+      oldAnnotation ? "M" : "CreationDate",
+      `D:${getModificationDate(date)}`
+    );
     stamp.setIfArray("Rect", rect);
     stamp.setIfNotExists("F", 4);
     stamp.setIfNotExists("Border", [0, 0, 0]);
