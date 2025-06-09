@@ -424,7 +424,10 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code &&= stringToPDFString(code).replaceAll("\x00", "");
+      code &&= stringToPDFString(
+        code,
+        /* keepEscapeSequence = */ true
+      ).replaceAll("\x00", "");
       if (code) {
         list.push(code);
       }
@@ -632,6 +635,13 @@ function recoverJsURL(str) {
 }
 
 function numberToString(value) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+    assert(
+      typeof value === "number",
+      `numberToString - the value (${value}) should be a number.`
+    );
+  }
+
   if (Number.isInteger(value)) {
     return value.toString();
   }

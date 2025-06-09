@@ -32,6 +32,7 @@ import {
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationMode,
+  MathClamp,
   PermissionFlag,
   PixelsPerInch,
   shadow,
@@ -121,6 +122,9 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
+ * @property {number} [capCanvasAreaFactor] - Cap the canvas area to the
+ *   viewport increased by the value in percent. Use `-1` for no limit.
+ *   The default value is 200%.
  * @property {boolean} [enableDetailCanvas] - When enabled, if the rendered
  *   pages would need a canvas that is larger than `maxCanvasPixels` or
  *   `maxCanvasDim`, it will draw a second canvas on top of the CSS-zoomed one,
@@ -138,6 +142,8 @@ function isValidAnnotationEditorMode(mode) {
  *   The default value is `true`.
  * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
  *   text that look like URLs. The default value is `true`.
+ * @property {number} [minDurationToUpdateCanvas] - Minimum duration to wait
+ *   before updating the canvas. The default value is `500`.
  */
 
 class PDFPageViewBuffer {
@@ -242,6 +248,8 @@ class PDFViewer {
 
   #eventAbortController = null;
 
+  #minDurationToUpdateCanvas = 0;
+
   #mlManager = null;
 
   #scrollTimeoutId = null;
@@ -330,6 +338,7 @@ class PDFViewer {
     }
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.maxCanvasDim = options.maxCanvasDim;
+    this.capCanvasAreaFactor = options.capCanvasAreaFactor;
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.l10n = options.l10n;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -341,6 +350,7 @@ class PDFViewer {
     this.#enableHWA = options.enableHWA || false;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
+    this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
@@ -996,12 +1006,14 @@ class PDFViewer {
             imageResourcesPath: this.imageResourcesPath,
             maxCanvasPixels: this.maxCanvasPixels,
             maxCanvasDim: this.maxCanvasDim,
+            capCanvasAreaFactor: this.capCanvasAreaFactor,
             enableDetailCanvas: this.enableDetailCanvas,
             pageColors,
             l10n: this.l10n,
             layerProperties: this._layerProperties,
             enableHWA: this.#enableHWA,
             enableAutoLinking: this.#enableAutoLinking,
+            minDurationToUpdateCanvas: this.#minDurationToUpdateCanvas,
           });
           this._pages.push(pageView);
         }
@@ -2294,7 +2306,7 @@ class PDFViewer {
         newScale = round((newScale * delta).toFixed(2) * 10) / 10;
       } while (--steps > 0);
     }
-    newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+    newScale = MathClamp(newScale, MIN_SCALE, MAX_SCALE);
     this.#setScale(newScale, { noScroll: false, drawingDelay, origin });
   }
 

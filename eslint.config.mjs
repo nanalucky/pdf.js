@@ -126,7 +126,6 @@ export default [
       "perfectionist/sort-exports": "error",
       "perfectionist/sort-named-exports": "error",
       "unicorn/no-abusive-eslint-disable": "error",
-      "unicorn/no-array-push-push": "error",
       "unicorn/no-array-reduce": ["error", { allowSimpleOperations: true }],
       "unicorn/no-console-spaces": "error",
       "unicorn/no-instanceof-builtins": "error",
@@ -134,6 +133,9 @@ export default [
       "unicorn/no-new-buffer": "error",
       "unicorn/no-single-promise-in-promise-methods": "error",
       "unicorn/no-typeof-undefined": ["error", { checkGlobalVariables: false }],
+      "unicorn/no-unnecessary-array-flat-depth": "error",
+      "unicorn/no-unnecessary-array-splice-count": "error",
+      "unicorn/no-unnecessary-slice-end": "error",
       "unicorn/no-useless-promise-resolve-reject": "error",
       "unicorn/no-useless-spread": "error",
       "unicorn/prefer-array-find": "error",
@@ -145,6 +147,7 @@ export default [
       "unicorn/prefer-date-now": "error",
       "unicorn/prefer-dom-node-append": "error",
       "unicorn/prefer-dom-node-remove": "error",
+      "unicorn/prefer-import-meta-properties": "error",
       "unicorn/prefer-includes": "error",
       "unicorn/prefer-logical-operator-over-ternary": "error",
       "unicorn/prefer-modern-dom-apis": "error",
@@ -152,6 +155,7 @@ export default [
       "unicorn/prefer-negative-index": "error",
       "unicorn/prefer-optional-catch-binding": "error",
       "unicorn/prefer-regexp-test": "error",
+      "unicorn/prefer-single-call": "error",
       "unicorn/prefer-string-replace-all": "error",
       "unicorn/prefer-string-starts-ends-with": "error",
       "unicorn/prefer-ternary": ["error", "only-single-line"],
@@ -302,6 +306,11 @@ export default [
         {
           selector: "NewExpression[callee.name='Name']",
           message: "Use `Name.get()` rather than `new Name()`.",
+        },
+        {
+          selector: "NewExpression[callee.name='ObjectLoader']",
+          message:
+            "Use `ObjectLoader.load()` rather than `new ObjectLoader()`.",
         },
         {
           selector: "NewExpression[callee.name='Ref']",

@@ -562,6 +562,8 @@ function getRGB(color) {
 function getColorValues(colors) {
   const span = document.createElement("span");
   span.style.visibility = "hidden";
+  // NOTE: The following does *not* affect `forced-colors: active` mode.
+  span.style.colorScheme = "only light";
   document.body.append(span);
   for (const name of colors.keys()) {
     span.style.color = name;
@@ -658,11 +660,12 @@ class OutputScale {
    * @returns {boolean} Returns `true` if scaling was limited,
    *   `false` otherwise.
    */
-  limitCanvas(width, height, maxPixels, maxDim) {
+  limitCanvas(width, height, maxPixels, maxDim, capAreaFactor = -1) {
     let maxAreaScale = Infinity,
       maxWidthScale = Infinity,
       maxHeightScale = Infinity;
 
+    maxPixels = OutputScale.capPixels(maxPixels, capAreaFactor);
     if (maxPixels > 0) {
       maxAreaScale = Math.sqrt(maxPixels / (width * height));
     }
@@ -682,6 +685,20 @@ class OutputScale {
 
   static get pixelRatio() {
     return globalThis.devicePixelRatio || 1;
+  }
+
+  static capPixels(maxPixels, capAreaFactor) {
+    if (capAreaFactor >= 0) {
+      const winPixels = Math.ceil(
+        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")
+          ? window.innerWidth * window.innerHeight
+          : window.screen.availWidth * window.screen.availHeight) *
+          this.pixelRatio ** 2 *
+          (1 + capAreaFactor / 100)
+      );
+      return maxPixels > 0 ? Math.min(maxPixels, winPixels) : winPixels;
+    }
+    return maxPixels;
   }
 }
 

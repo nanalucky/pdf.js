@@ -95,10 +95,6 @@ class BasePdfManager {
     return this._docBaseUrl;
   }
 
-  get catalog() {
-    return this.pdfDocument.catalog;
-  }
-
   ensureDoc(prop, args) {
     return this.ensure(this.pdfDocument, prop, args);
   }
@@ -117,18 +113,6 @@ class BasePdfManager {
 
   fontFallback(id, handler) {
     return this.pdfDocument.fontFallback(id, handler);
-  }
-
-  loadXfaFonts(handler, task) {
-    return this.pdfDocument.loadXfaFonts(handler, task);
-  }
-
-  loadXfaImages() {
-    return this.pdfDocument.loadXfaImages();
-  }
-
-  serializeXfaData(annotationStorage) {
-    return this.pdfDocument.serializeXfaData(annotationStorage);
   }
 
   cleanup(manuallyTriggered = false) {

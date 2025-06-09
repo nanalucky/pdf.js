@@ -1158,15 +1158,12 @@ class Annotation {
     }
   }
 
-  loadResources(keys, appearance) {
-    return appearance.dict.getAsync("Resources").then(resources => {
-      if (!resources) {
-        return undefined;
-      }
-
-      const objectLoader = new ObjectLoader(resources, keys, resources.xref);
-      return objectLoader.load().then(() => resources);
-    });
+  async loadResources(keys, appearance) {
+    const resources = await appearance.dict.getAsync("Resources");
+    if (resources) {
+      await ObjectLoader.load(resources, keys, resources.xref);
+    }
+    return resources;
   }
 
   async getOperatorList(evaluator, task, intent, annotationStorage) {
@@ -2248,7 +2245,11 @@ class WidgetAnnotation extends Annotation {
       const appearanceDict = (appearanceStream.dict = new Dict(xref));
       appearanceDict.set("Subtype", Name.get("Form"));
       appearanceDict.set("Resources", resources);
-      appearanceDict.set("BBox", [0, 0, this.width, this.height]);
+      const bbox =
+        rotation % 180 === 0
+          ? [0, 0, this.width, this.height]
+          : [0, 0, this.height, this.width];
+      appearanceDict.set("BBox", bbox);
 
       const rotationMatrix = this.getRotationMatrix(annotationStorage);
       if (rotationMatrix !== IDENTITY_MATRIX) {
@@ -3289,7 +3290,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         ? this.data.fieldValue
         : "Yes";
 
-    const exportValues = normalAppearance.getKeys();
+    const exportValues = this._decodeFormValue(normalAppearance.getKeys());
     if (exportValues.length === 0) {
       exportValues.push("Off", yes);
     } else if (exportValues.length === 1) {

@@ -270,7 +270,7 @@ pdfjs-page-landmark =
 pdfjs-loading-error = Προέκυψε σφάλμα κατά τη φόρτωση του PDF.
 pdfjs-invalid-file-error = Μη έγκυρο ή κατεστραμμένο αρχείο PDF.
 pdfjs-missing-file-error = Λείπει αρχείο PDF.
-pdfjs-unexpected-response-error = Μη αναμενόμενη απόκριση από το διακομιστή.
+pdfjs-unexpected-response-error = Απρόσμενη απάντηση διακομιστή.
 pdfjs-rendering-error = Προέκυψε σφάλμα κατά την εμφάνιση της σελίδας.
 
 ## Annotations
@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Ενημέρωση
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Αφαίρεση υπογραφής
-pdfjs-editor-delete-signature-button-label = Αφαίρεση υπογραφής
 pdfjs-editor-delete-signature-button1 =
     .title = Αφαίρεση αποθηκευμένης υπογραφής
 pdfjs-editor-delete-signature-button-label1 = Αφαίρεση αποθηκευμένης υπογραφής

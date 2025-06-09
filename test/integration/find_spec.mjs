@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { closePages, loadAndWait } from "./test_utils.mjs";
+import { closePages, FSI, loadAndWait, PDI } from "./test_utils.mjs";
 
 function fuzzyMatch(a, b, browserName, pixelFuzz = 3) {
   expect(a)
@@ -41,7 +41,7 @@ describe("find bar", () => {
         pages.map(async ([browserName, page]) => {
           // Highlight all occurrences of the letter A (case insensitive).
           await page.click("#viewFindButton");
-          await page.waitForSelector("#viewFindButton", { hidden: false });
+          await page.waitForSelector("#findInput", { visible: true });
           await page.type("#findInput", "a");
           await page.click("#findHighlightAll + label");
           await page.waitForSelector(".textLayer .highlight");
@@ -101,7 +101,7 @@ describe("find bar", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.click("#viewFindButton");
-          await page.waitForSelector("#viewFindButton", { hidden: false });
+          await page.waitForSelector("#findInput", { visible: true });
           await page.type("#findInput", "preferences");
           await page.waitForSelector("#findInput[data-status='']");
           await page.waitForSelector(".xfaLayer .highlight");
@@ -110,10 +110,6 @@ describe("find bar", () => {
           );
           const resultElement = await page.waitForSelector("#findResultsCount");
           const resultText = await resultElement.evaluate(el => el.textContent);
-          /** Unicode bidi isolation characters. */
-          const FSI = "\u2068";
-          const PDI = "\u2069";
-          // Fluent adds these markers to the result text.
           expect(resultText).toEqual(`${FSI}1${PDI} of ${FSI}1${PDI} match`);
           const selectedElement = await page.waitForSelector(
             ".highlight.selected"
@@ -143,7 +139,7 @@ describe("find bar", () => {
         pages.map(async ([browserName, page]) => {
           // Search for "40"
           await page.click("#viewFindButton");
-          await page.waitForSelector("#viewFindButton", { hidden: false });
+          await page.waitForSelector("#findInput", { visible: true });
           await page.type("#findInput", "40");
 
           const highlight = await page.waitForSelector(".textLayer .highlight");

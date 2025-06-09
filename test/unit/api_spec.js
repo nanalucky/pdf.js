@@ -798,7 +798,7 @@ describe("api", function () {
       ]);
       expect(opList.argsArray).toEqual([
         [0.5],
-        new Uint8ClampedArray([255, 0, 0]),
+        ["#ff0000"],
         [
           OPS.closeStroke,
           [
@@ -1082,7 +1082,7 @@ describe("api", function () {
           getDocument(tracemonkeyGetDocumentParams);
         }).toThrow(
           new Error(
-            "PDFWorker.fromPort - the worker is being destroyed.\n" +
+            "PDFWorker.create - the worker is being destroyed.\n" +
               "Please remember to await `PDFDocumentLoadingTask.destroy()`-calls."
           )
         );
@@ -1395,6 +1395,50 @@ describe("api", function () {
 
       const destC = await pdfDoc.getDestination("C");
       expect(destC).toEqual([{ num: 5, gen: 0 }, { name: "Fit" }]);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets a destination, from /Dests dictionary with keys using PDFDocEncoding", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("issue19835.pdf"));
+      const pdfDoc = await loadingTask.promise;
+
+      const page3 = await pdfDoc.getPage(3);
+      const annots = await page3.getAnnotations();
+
+      const annot = annots.find(x => x.id === "22R");
+      // Sanity check to make sure that we found the "correct" annotation.
+      expect(annot.dest).toEqual(
+        "\u00f2\u00ab\u00d9\u0025\u006f\u2030\u0062\u2122\u0030\u00ab\u00f4\u0047\u0016\u0142\u00e8\u00bd\u2014\u0063\u00a1\u00db"
+      );
+
+      const dest = await pdfDoc.getDestination(annot.dest);
+      expect(dest).toEqual([2, { name: "XYZ" }, 34.0799999, 315.439999, 0]);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets a destination containing Unicode escape sequence (\x1b), from /Dests dictionary with keys using PDFDocEncoding", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("issue19835.pdf"));
+      const pdfDoc = await loadingTask.promise;
+
+      const page3 = await pdfDoc.getPage(3);
+      const annots = await page3.getAnnotations();
+
+      const annot = annots.find(x => x.id === "55R");
+      // Sanity check to make sure that we found the "correct" annotation.
+      expect(annot.dest).toEqual(
+        "\u02d9\u0064\u002a\u0010\u000e\u0061\u00d6\u0002\u005b\u00b7\u201a\u0022\u00c5\u00da\u017e\u00bb\u00d5\u0062\u02dd\u00d1"
+      );
+
+      const dest = await pdfDoc.getDestination(annot.dest);
+      expect(dest).toEqual([28, { name: "XYZ" }, 34.0799999, 73.5199999, 0]);
 
       await loadingTask.destroy();
     });

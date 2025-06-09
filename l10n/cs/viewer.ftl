@@ -255,7 +255,7 @@ pdfjs-find-not-found = Hledaný text nenalezen
 ## Predefined zoom values
 
 pdfjs-page-scale-width = Podle šířky
-pdfjs-page-scale-fit = Podle výšky
+pdfjs-page-scale-fit = Podle stránky
 pdfjs-page-scale-auto = Automatická velikost
 pdfjs-page-scale-actual = Skutečná velikost
 # Variables:
@@ -608,9 +608,6 @@ pdfjs-editor-edit-signature-update-button = Aktualizovat
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Odebrat podpis
-pdfjs-editor-delete-signature-button-label = Odebrat podpis
 pdfjs-editor-delete-signature-button1 =
     .title = Odebrat uložený podpis
 pdfjs-editor-delete-signature-button-label1 = Odebrat uložený podpis

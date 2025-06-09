@@ -465,7 +465,7 @@ class PartialEvaluator {
     localColorSpaceCache,
     seenRefs
   ) {
-    const dict = xobj.dict;
+    const { dict } = xobj;
     const matrix = lookupMatrix(dict.getArray("Matrix"), null);
     const bbox = lookupNormalRect(dict.getArray("BBox"), null);
 
@@ -507,7 +507,7 @@ class PartialEvaluator {
 
       if (smask?.backdrop) {
         colorSpace ||= ColorSpaceUtils.rgb;
-        smask.backdrop = colorSpace.getRgb(smask.backdrop, 0);
+        smask.backdrop = colorSpace.getRgbHex(smask.backdrop, 0);
       }
 
       operatorList.addOp(OPS.beginGroup, [groupOptions]);
@@ -521,10 +521,12 @@ class PartialEvaluator {
     const args = [f32matrix, f32bbox];
     operatorList.addOp(OPS.paintFormXObjectBegin, args);
 
+    const localResources = dict.get("Resources");
+
     await this.getOperatorList({
       stream: xobj,
       task,
-      resources: dict.get("Resources") || resources,
+      resources: localResources instanceof Dict ? localResources : resources,
       operatorList,
       initialState,
       prevRefs: seenRefs,
@@ -1544,7 +1546,7 @@ class PartialEvaluator {
         localTilingPatternCache.getByRef(rawPattern);
       if (localTilingPattern) {
         try {
-          const color = cs.base ? cs.base.getRgb(args, 0) : null;
+          const color = cs.base ? cs.base.getRgbHex(args, 0) : null;
           const tilingPatternIR = getTilingPatternIR(
             localTilingPattern.operatorListIR,
             localTilingPattern.dict,
@@ -1563,7 +1565,7 @@ class PartialEvaluator {
         const typeNum = dict.get("PatternType");
 
         if (typeNum === PatternType.TILING) {
-          const color = cs.base ? cs.base.getRgb(args, 0) : null;
+          const color = cs.base ? cs.base.getRgbHex(args, 0) : null;
           return this.handleTilingType(
             fn,
             color,
@@ -1998,47 +2000,47 @@ class PartialEvaluator {
           }
           case OPS.setFillColor:
             cs = stateManager.state.fillColorSpace;
-            args = cs.getRgb(args, 0);
+            args = [cs.getRgbHex(args, 0)];
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeColor:
             cs = stateManager.state.strokeColorSpace;
-            args = cs.getRgb(args, 0);
+            args = [cs.getRgbHex(args, 0)];
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillGray:
             stateManager.state.fillColorSpace = ColorSpaceUtils.gray;
-            args = ColorSpaceUtils.gray.getRgb(args, 0);
+            args = [ColorSpaceUtils.gray.getRgbHex(args, 0)];
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeGray:
             stateManager.state.strokeColorSpace = ColorSpaceUtils.gray;
-            args = ColorSpaceUtils.gray.getRgb(args, 0);
+            args = [ColorSpaceUtils.gray.getRgbHex(args, 0)];
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillCMYKColor:
             stateManager.state.fillColorSpace = ColorSpaceUtils.cmyk;
-            args = ColorSpaceUtils.cmyk.getRgb(args, 0);
+            args = [ColorSpaceUtils.cmyk.getRgbHex(args, 0)];
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeCMYKColor:
             stateManager.state.strokeColorSpace = ColorSpaceUtils.cmyk;
-            args = ColorSpaceUtils.cmyk.getRgb(args, 0);
+            args = [ColorSpaceUtils.cmyk.getRgbHex(args, 0)];
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillRGBColor:
             stateManager.state.fillColorSpace = ColorSpaceUtils.rgb;
-            args = ColorSpaceUtils.rgb.getRgb(args, 0);
+            args = [ColorSpaceUtils.rgb.getRgbHex(args, 0)];
             break;
           case OPS.setStrokeRGBColor:
             stateManager.state.strokeColorSpace = ColorSpaceUtils.rgb;
-            args = ColorSpaceUtils.rgb.getRgb(args, 0);
+            args = [ColorSpaceUtils.rgb.getRgbHex(args, 0)];
             break;
           case OPS.setFillColorN:
             cs = stateManager.state.patternFillColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpaceUtils.gray.getRgb(args, 0);
+                args = [ColorSpaceUtils.gray.getRgbHex(args, 0)];
                 fn = OPS.setFillRGBColor;
                 break;
               }
@@ -2063,14 +2065,14 @@ class PartialEvaluator {
               );
               return;
             }
-            args = cs.getRgb(args, 0);
+            args = [cs.getRgbHex(args, 0)];
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeColorN:
             cs = stateManager.state.patternStrokeColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpaceUtils.gray.getRgb(args, 0);
+                args = [ColorSpaceUtils.gray.getRgbHex(args, 0)];
                 fn = OPS.setStrokeRGBColor;
                 break;
               }
@@ -2095,7 +2097,7 @@ class PartialEvaluator {
               );
               return;
             }
-            args = cs.getRgb(args, 0);
+            args = [cs.getRgbHex(args, 0)];
             fn = OPS.setStrokeRGBColor;
             break;
 
@@ -3298,14 +3300,15 @@ class PartialEvaluator {
                 if (!(xobj instanceof BaseStream)) {
                   throw new FormatError("XObject should be a stream");
                 }
+                const { dict } = xobj;
 
-                const type = xobj.dict.get("Subtype");
+                const type = dict.get("Subtype");
                 if (!(type instanceof Name)) {
                   throw new FormatError("XObject should have a Name subtype");
                 }
 
                 if (type.name !== "Form") {
-                  emptyXObjectCache.set(name, xobj.dict.objId, true);
+                  emptyXObjectCache.set(name, dict.objId, true);
 
                   resolveXObject();
                   return;
@@ -3319,10 +3322,12 @@ class PartialEvaluator {
                 const currentState = stateManager.state.clone();
                 const xObjStateManager = new StateManager(currentState);
 
-                const matrix = lookupMatrix(xobj.dict.getArray("Matrix"), null);
+                const matrix = lookupMatrix(dict.getArray("Matrix"), null);
                 if (matrix) {
                   xObjStateManager.transform(matrix);
                 }
+
+                const localResources = dict.get("Resources");
 
                 // Enqueue the `textContent` chunk before parsing the /Form
                 // XObject.
@@ -3348,7 +3353,10 @@ class PartialEvaluator {
                   .getTextContent({
                     stream: xobj,
                     task,
-                    resources: xobj.dict.get("Resources") || resources,
+                    resources:
+                      localResources instanceof Dict
+                        ? localResources
+                        : resources,
                     stateManager: xObjStateManager,
                     includeMarkedContent,
                     sink: sinkWrapper,
@@ -3362,7 +3370,7 @@ class PartialEvaluator {
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
-                      emptyXObjectCache.set(name, xobj.dict.objId, true);
+                      emptyXObjectCache.set(name, dict.objId, true);
                     }
                     resolveXObject();
                   }, rejectXObject);
@@ -4305,12 +4313,9 @@ class PartialEvaluator {
 
     if (!descriptor) {
       if (isType3Font) {
-        const bbox = lookupNormalRect(dict.getArray("FontBBox"), [0, 0, 0, 0]);
         // FontDescriptor is only required for Type3 fonts when the document
-        // is a tagged pdf. Create a barbebones one to get by.
-        descriptor = new Dict(null);
-        descriptor.set("FontName", Name.get(type));
-        descriptor.set("FontBBox", bbox);
+        // is a tagged pdf.
+        descriptor = Dict.empty;
       } else {
         // Before PDF 1.5 if the font was one of the base 14 fonts, having a
         // FontDescriptor was not required.
@@ -4412,7 +4417,13 @@ class PartialEvaluator {
 
     const fontNameStr = fontName?.name;
     const baseFontStr = baseFont?.name;
-    if (!isType3Font && fontNameStr !== baseFontStr) {
+    if (isType3Font) {
+      if (!fontNameStr) {
+        // Since the /FontDescriptor is optional in Type3 fonts, ensure that we
+        // always have a "valid" /FontName (fixes issue19954.pdf).
+        fontName = Name.get(type);
+      }
+    } else if (fontNameStr !== baseFontStr) {
       info(
         `The FontDescriptor's FontName is "${fontNameStr}" but ` +
           `should be the same as the Font's BaseFont "${baseFontStr}".`
@@ -4430,8 +4441,8 @@ class PartialEvaluator {
       ) {
         fontName = null;
       }
+      fontName ||= baseFont;
     }
-    fontName ||= baseFont;
 
     if (!(fontName instanceof Name)) {
       throw new FormatError("invalid font name");
@@ -4509,7 +4520,7 @@ class PartialEvaluator {
     );
     const bbox = lookupNormalRect(
       descriptor.getArray("FontBBox") || dict.getArray("FontBBox"),
-      undefined
+      isType3Font ? [0, 0, 0, 0] : undefined
     );
     let ascent = descriptor.get("Ascent");
     if (typeof ascent !== "number") {
@@ -4697,9 +4708,9 @@ class TranslatedFont {
     const fontResources = this.dict.get("Resources") || resources;
     const charProcOperatorList = Object.create(null);
 
-    const fontBBox = Util.normalizeRect(font.bbox || [0, 0, 0, 0]),
-      width = fontBBox[2] - fontBBox[0],
-      height = fontBBox[3] - fontBBox[1];
+    const [x0, y0, x1, y1] = font.bbox,
+      width = x1 - x0,
+      height = y1 - y0;
     const fontBBoxSize = Math.hypot(width, height);
 
     for (const key of charProcs.getKeys()) {
