@@ -542,7 +542,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     let baseX, baseY;
-    if (this._isCopy || this.annotationElementId) {
+    if (this._isCopy || this.annotationElementId || this._isSync) {
       baseX = this.x;
       baseY = this.y;
     }
@@ -617,6 +617,13 @@ class FreeTextEditor extends AnnotationEditor {
         this._moveAfterPaste(baseX, baseY);
       }
 
+      this.#setContent();
+      this._isDraggable = true;
+      this.editorDiv.contentEditable = false;
+    } else if (this._isSync) {
+      this.x = baseX;
+      this.y = baseY;
+      this.fixAndSetPosition();
       this.#setContent();
       this._isDraggable = true;
       this.editorDiv.contentEditable = false;
@@ -750,7 +757,7 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static async deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager, editorId) {
     let initialData = null;
     if (data instanceof FreeTextAnnotationElement) {
       const {
@@ -787,7 +794,7 @@ class FreeTextEditor extends AnnotationEditor {
         popupRef,
       };
     }
-    const editor = await super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager, editorId);
     editor.#fontSize = data.fontSize;
     editor.#color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);

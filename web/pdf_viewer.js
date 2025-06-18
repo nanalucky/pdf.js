@@ -144,6 +144,8 @@ function isValidAnnotationEditorMode(mode) {
  *   text that look like URLs. The default value is `true`.
  * @property {number} [minDurationToUpdateCanvas] - Minimum duration to wait
  *   before updating the canvas. The default value is `500`.
+ * @property {string} [annotationEditorSecondPrefix] - Second prefix for the
+ *   annotation editor. The default value is `""`.
  */
 
 class PDFPageViewBuffer {
@@ -278,6 +280,8 @@ class PDFViewer {
 
   #textLayerMode = TextLayerMode.ENABLE;
 
+  #annotationEditorSecondPrefix = "";
+
   /**
    * @param {PDFViewerOptions} options
    */
@@ -351,7 +355,8 @@ class PDFViewer {
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
-
+    this.#annotationEditorSecondPrefix =
+      options.annotationEditorSecondPrefix || "";
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
@@ -938,7 +943,8 @@ class PDFViewer {
               this.#enableNewAltTextWhenAddingImage,
               this.#mlManager,
               this.#editorUndoBar,
-              this.#supportsPinchToZoom
+              this.#supportsPinchToZoom,
+              this.#annotationEditorSecondPrefix
             );
             eventBus.dispatch("annotationeditoruimanager", {
               source: this,

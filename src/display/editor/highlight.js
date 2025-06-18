@@ -762,7 +762,7 @@ class HighlightEditor extends AnnotationEditor {
       quadPoints[i + 5] = quadPoints[i + 7] = sy - height * pageHeight;
       i += 8;
     }
-    return quadPoints;
+    return Array.from(quadPoints);
   }
 
   #serializeOutlines(rect) {
@@ -860,7 +860,7 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static async deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager, editorId) {
     let initialData = null;
     if (data instanceof HighlightAnnotationElement) {
       const {
@@ -913,7 +913,7 @@ class HighlightEditor extends AnnotationEditor {
     }
 
     const { color, quadPoints, inkLists, opacity } = data;
-    const editor = await super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager, editorId);
 
     editor.color = Util.makeHexColor(...color);
     editor.#opacity = opacity || 1;
@@ -992,8 +992,7 @@ class HighlightEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize(isForCopying = false) {
-    // It doesn't make sense to copy/paste a highlight annotation.
-    if (this.isEmpty() || isForCopying) {
+    if (this.isEmpty()) {
       return null;
     }
 

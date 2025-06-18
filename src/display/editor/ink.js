@@ -136,7 +136,7 @@ class InkEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
-  static async deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager, editorId) {
     let initialData = null;
     if (data instanceof InkAnnotationElement) {
       const {
@@ -170,7 +170,7 @@ class InkEditor extends DrawingEditor {
       };
     }
 
-    const editor = await super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager, editorId);
     editor.annotationElementId = data.id || null;
     editor._initialData = initialData;
 

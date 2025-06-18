@@ -946,7 +946,7 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static async deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager, editorId) {
     const {
       rawDims: { pageWidth, pageHeight, pageX, pageY },
     } = parent.viewport;
@@ -958,7 +958,7 @@ class DrawingEditor extends AnnotationEditor {
       this._INNER_MARGIN,
       data
     );
-    const editor = await super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager, editorId);
     editor.createDrawingOptions(data);
     editor.#createDrawOutlines({ drawOutlines });
     editor.#addToDrawLayer();

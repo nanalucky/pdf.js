@@ -90,6 +90,8 @@ class AnnotationEditor {
 
   #touchManager = null;
 
+  #dispatchModifiedEventTimeout = null;
+
   isSelected = false;
 
   _isCopy = false;
@@ -198,6 +200,7 @@ class AnnotationEditor {
 
     this.isAttachedToDOM = false;
     this.deleted = false;
+    this.dispatchModifiedEvent();
   }
 
   get editorType() {
@@ -341,6 +344,7 @@ class AnnotationEditor {
    */
   addCommands(params) {
     this._uiManager.addCommands(params);
+    this.dispatchModifiedEvent();
   }
 
   get currentLayer() {
@@ -1619,17 +1623,19 @@ class AnnotationEditor {
    * @param {Object} data
    * @param {AnnotationEditorLayer} parent
    * @param {AnnotationEditorUIManager} uiManager
+   * @param {string} [editorId]
    * @returns {Promise<AnnotationEditor | null>}
    */
-  static async deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager, editorId) {
     const editor = new this.prototype.constructor({
       parent,
-      id: parent.getNextId(),
+      id: editorId || parent.getNextId(),
       uiManager,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
     editor._isCopy = data.isCopy || false;
+    editor._isSync = data.isSync || false;
 
     const [pageWidth, pageHeight] = editor.pageDimensions;
     const [x, y, width, height] = editor.getRectInCurrentCoords(
@@ -1654,6 +1660,24 @@ class AnnotationEditor {
     return (
       !!this.annotationElementId && (this.deleted || this.serialize() !== null)
     );
+  }
+
+  /** Dispatch an event that the editor has been modified. */
+  dispatchModifiedEvent() {
+    if (this._uiManager.suppressModifiedEvent) {
+      return;
+    }
+    // debounce the event
+    if (this.#dispatchModifiedEventTimeout) {
+      clearTimeout(this.#dispatchModifiedEventTimeout);
+    }
+    // Copy data to avoid editor being destroyed before event
+    const editorId = this.id;
+    this.#dispatchModifiedEventTimeout = setTimeout(() => {
+      this._uiManager._eventBus.dispatch("annotationeditormodified", {
+        editorId,
+      });
+    }, 100);
   }
 
   /**
@@ -1690,6 +1714,7 @@ class AnnotationEditor {
     this.parent = null;
     this.#touchManager?.destroy();
     this.#touchManager = null;
+    this.dispatchModifiedEvent();
   }
 
   /**
