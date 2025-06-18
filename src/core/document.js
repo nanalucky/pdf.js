@@ -66,6 +66,7 @@ import { calculateMD5 } from "./calculate_md5.js";
 import { Catalog } from "./catalog.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { DatasetReader } from "./dataset_reader.js";
+import { Intersector } from "./intersector.js";
 import { Linearization } from "./parser.js";
 import { NullStream } from "./stream.js";
 import { ObjectLoader } from "./object_loader.js";
@@ -636,6 +637,7 @@ class Page {
     includeMarkedContent,
     disableNormalization,
     sink,
+    intersector = null,
   }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_TEXT_CONTENT);
@@ -662,6 +664,7 @@ class Page {
       sink,
       viewBox: this.view,
       lang,
+      intersector,
     });
   }
 
@@ -711,6 +714,8 @@ class Page {
       intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
       intentPrint = !!(intent & RenderingIntentFlag.PRINT);
 
+    const highlightedAnnotations = [];
+
     for (const annotation of annotations) {
       // Get the annotation even if it's hidden because
       // JS can change its display.
@@ -736,7 +741,27 @@ class Page {
               );
             })
         );
+      } else if (annotation.overlaysTextContent && isVisible) {
+        highlightedAnnotations.push(annotation);
       }
+    }
+
+    if (highlightedAnnotations.length > 0) {
+      const intersector = new Intersector(highlightedAnnotations);
+      textContentPromises.push(
+        this.extractTextContent({
+          handler,
+          task,
+          includeMarkedContent: false,
+          disableNormalization: false,
+          sink: null,
+          viewBox: this.view,
+          lang: null,
+          intersector,
+        }).then(() => {
+          intersector.setText();
+        })
+      );
     }
 
     await Promise.all(textContentPromises);

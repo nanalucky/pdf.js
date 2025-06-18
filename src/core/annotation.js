@@ -1247,6 +1247,10 @@ class Annotation {
     return null;
   }
 
+  get overlaysTextContent() {
+    return false;
+  }
+
   get hasTextContent() {
     return false;
   }
@@ -4721,6 +4725,10 @@ class HighlightAnnotation extends EditableAnnotation {
     }
   }
 
+  get overlaysTextContent() {
+    return true;
+  }
+
   static createNewDict(annotation, xref, { apRef, ap }) {
     const { color, oldAnnotation, opacity, rect, rotation, user, quadPoints } =
       annotation;
@@ -4845,6 +4853,10 @@ class UnderlineAnnotation extends MarkupAnnotation {
       this.data.popupRef = null;
     }
   }
+
+  get overlaysTextContent() {
+    return true;
+  }
 }
 
 class SquigglyAnnotation extends MarkupAnnotation {
@@ -4889,6 +4901,10 @@ class SquigglyAnnotation extends MarkupAnnotation {
       this.data.popupRef = null;
     }
   }
+
+  get overlaysTextContent() {
+    return true;
+  }
 }
 
 class StrikeOutAnnotation extends MarkupAnnotation {
@@ -4927,6 +4943,10 @@ class StrikeOutAnnotation extends MarkupAnnotation {
     } else {
       this.data.popupRef = null;
     }
+  }
+
+  get overlaysTextContent() {
+    return true;
   }
 }
 
