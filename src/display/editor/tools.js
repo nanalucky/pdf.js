@@ -131,7 +131,9 @@ class CurrentPointers {
 class IdManager {
   #id = 0;
 
-  constructor() {
+  #annotationEditorSecondPrefix = "";
+
+  constructor(annotationEditorSecondPrefix = "") {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
         value: () => (this.#id = 0),
@@ -140,6 +142,7 @@ class IdManager {
         value: () => this.#id,
       });
     }
+    this.#annotationEditorSecondPrefix = annotationEditorSecondPrefix;
   }
 
   /**
@@ -147,7 +150,7 @@ class IdManager {
    * @returns {string}
    */
   get id() {
-    return `${AnnotationEditorPrefix}${this.#id++}`;
+    return `${AnnotationEditorPrefix}${this.#annotationEditorSecondPrefix}${this.#id++}`;
   }
 }
 
@@ -794,7 +797,7 @@ class AnnotationEditorUIManager {
 
   #floatingToolbar = null;
 
-  #idManager = new IdManager();
+  #idManager = null;
 
   #isEnabled = false;
 
@@ -1000,7 +1003,8 @@ class AnnotationEditorUIManager {
     enableNewAltTextWhenAddingImage,
     mlManager,
     editorUndoBar,
-    supportsPinchToZoom
+    supportsPinchToZoom,
+    annotationEditorSecondPrefix
   ) {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
@@ -1064,6 +1068,8 @@ class AnnotationEditorUIManager {
     this._editorUndoBar = editorUndoBar || null;
     this._supportsPinchToZoom = supportsPinchToZoom !== false;
     commentManager?.setSidebarUiManager(this);
+    this.#idManager = new IdManager(annotationEditorSecondPrefix);
+    this.suppressModifiedEvent = false;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
@@ -1115,6 +1121,7 @@ class AnnotationEditorUIManager {
     }
     this._editorUndoBar?.destroy();
     this.#pdfDocument = null;
+    this.suppressModifiedEvent = false;
   }
 
   combinedSignal(ac) {
@@ -1790,6 +1797,10 @@ class AnnotationEditorUIManager {
 
     const editors = [];
     for (const editor of this.#selectedEditors) {
+      // It doesn't make sense to copy/paste a highlight annotation.
+      if (editor.type === AnnotationEditorType.HIGHLIGHT) {
+        continue;
+      }
       const serialized = editor.serialize(/* isForCopying = */ true);
       if (serialized) {
         editors.push(serialized);

@@ -734,7 +734,7 @@ class StampEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static async deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager, editorId) {
     let initialData = null;
     let missingCanvas = false;
     if (data instanceof StampAnnotationElement) {
@@ -799,7 +799,7 @@ class StampEditor extends AnnotationEditor {
         modificationDate,
       };
     }
-    const editor = await super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager, editorId);
     const { rect, bitmap, bitmapUrl, bitmapId, isSvg, accessibilityData } =
       data;
     if (missingCanvas) {

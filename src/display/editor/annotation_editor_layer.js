@@ -723,13 +723,14 @@ class AnnotationEditorLayer {
   /**
    * Create a new editor
    * @param {Object} data
+   * @param {string} [editorId]
    * @returns {Promise<AnnotationEditor | null>}
    */
-  async deserialize(data) {
+  async deserialize(data, editorId) {
     return (
       (await AnnotationEditorLayer.#editorTypes
         .get(data.annotationType ?? data.annotationEditorType)
-        ?.deserialize(data, this, this.#uiManager)) || null
+        ?.deserialize(data, this, this.#uiManager, editorId)) || null
     );
   }
 

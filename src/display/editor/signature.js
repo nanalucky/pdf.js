@@ -428,8 +428,8 @@ class SignatureEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
-  static async deserialize(data, parent, uiManager) {
-    const editor = await super.deserialize(data, parent, uiManager);
+  static async deserialize(data, parent, uiManager, editorId) {
+    const editor = await super.deserialize(data, parent, uiManager, editorId);
     editor.#isExtracted = data.areContours;
     editor.description = data.accessibilityData?.alt || "";
     editor.#signatureUUID = data.uuid;
