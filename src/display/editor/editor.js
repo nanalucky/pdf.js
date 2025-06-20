@@ -502,6 +502,7 @@ class AnnotationEditor {
 
   translationDone() {
     this._onTranslated(this.x, this.y);
+    this.dispatchModifiedEvent();
   }
 
   drag(tx, ty) {
