@@ -766,7 +766,7 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   #serializeOutlines(rect) {
-    return this.#highlightOutlines.serialize(rect, this.#getRotation());
+    return this.#highlightOutlines.serialize(rect, this.#getRotation()).points;
   }
 
   static startHighlighting(parent, isLTR, { target: textLayer, x, y }) {
@@ -1009,7 +1009,7 @@ class HighlightEditor extends AnnotationEditor {
       opacity: this.#opacity,
       thickness: this.#thickness,
       quadPoints: this.#serializeBoxes(),
-      outlines: this.#serializeOutlines(rect),
+      inkLists: this.#serializeOutlines(rect),
       pageIndex: this.pageIndex,
       rect,
       rotation: this.#getRotation(),
