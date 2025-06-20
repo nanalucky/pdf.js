@@ -2869,6 +2869,7 @@ class AnnotationEditorUIManager {
           editor.x = x;
           editor.y = y;
         }
+        editor.dispatchModifiedEvent();
       }
     };
 
