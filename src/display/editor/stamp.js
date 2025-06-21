@@ -920,6 +920,47 @@ class StampEditor extends AnnotationEditor {
 
     return null;
   }
+
+  /** @inheritdoc */
+  dispatchModifiedEvent() {
+    if (this._uiManager.suppressModifiedEvent) {
+      return;
+    }
+    // Use try/catch to avoid errors during construction when the base
+    // constructor calls this and #bitmap is not yet initialized.
+    try {
+      if (this.#bitmap && this.#bitmap !== null) {
+        super.dispatchModifiedEvent();
+        return;
+      }
+    } catch {
+      // do nothing
+    }
+
+    // The same for #bitmapPromise as for #bitmap.
+    try {
+      if (this.#bitmapPromise && this.#bitmapPromise !== null) {
+        this.#bitmapPromise.then(() => {
+          super.dispatchModifiedEvent();
+        });
+        return;
+      }
+    } catch {
+      // do nothing
+    }
+
+    // If the bitmap is not loaded yet, we wait for 500ms before dispatching
+    // the event.
+    this._dispatchModifiedEventTimeout = setTimeout(() => {
+      if (this.#bitmapPromise) {
+        this.#bitmapPromise.then(() => {
+          super.dispatchModifiedEvent();
+        });
+      } else if (this.#bitmap) {
+        super.dispatchModifiedEvent();
+      }
+    }, 500);
+  }
 }
 
 export { StampEditor };
