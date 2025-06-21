@@ -91,7 +91,7 @@ class AnnotationEditor {
 
   #touchManager = null;
 
-  #dispatchModifiedEventTimeout = null;
+  _dispatchModifiedEventTimeout = null;
 
   isSelected = false;
 
@@ -1917,12 +1917,12 @@ class AnnotationEditor {
       return;
     }
     // debounce the event
-    if (this.#dispatchModifiedEventTimeout) {
-      clearTimeout(this.#dispatchModifiedEventTimeout);
+    if (this._dispatchModifiedEventTimeout) {
+      clearTimeout(this._dispatchModifiedEventTimeout);
     }
     // Copy data to avoid editor being destroyed before event
     const editorId = this.id;
-    this.#dispatchModifiedEventTimeout = setTimeout(() => {
+    this._dispatchModifiedEventTimeout = setTimeout(() => {
       this._uiManager._eventBus.dispatch("annotationeditormodified", {
         editorId,
       });

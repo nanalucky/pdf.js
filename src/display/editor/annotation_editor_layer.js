@@ -175,6 +175,7 @@ class AnnotationEditorLayer {
         this.togglePointerEvents(false);
         this.toggleAnnotationLayerPointerEvents(true);
         this.disableClick();
+        this.div.hidden = this.isEmpty;
         return;
       case AnnotationEditorType.INK:
         this.disableTextSelection();
