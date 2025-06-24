@@ -166,7 +166,6 @@ class AnnotationEditorLayer {
         this.togglePointerEvents(false);
         this.toggleAnnotationLayerPointerEvents(true);
         this.disableClick();
-        this.div.hidden = this.isEmpty;
         return;
       case AnnotationEditorType.INK:
         this.disableTextSelection();
@@ -327,9 +326,7 @@ class AnnotationEditorLayer {
     }
 
     this.#cleanup();
-    if (this.isEmpty) {
-      this.div.hidden = true;
-    }
+    this.div.hidden = this.isEmpty;
     const { classList } = this.div;
     for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
       classList.remove(`${editorType._type}Editing`);
