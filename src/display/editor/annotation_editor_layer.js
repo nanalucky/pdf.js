@@ -401,7 +401,9 @@ class AnnotationEditorLayer {
     }
 
     this.#cleanup();
-    this.div.hidden = this.isEmpty;
+    if (this.isEmpty) {
+      this.div.hidden = true;
+    }
     const { classList } = this.div;
     for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
       classList.remove(`${editorType._type}Editing`);
@@ -647,6 +649,7 @@ class AnnotationEditorLayer {
     } else {
       this.add(editor);
     }
+    this.div.hidden = this.isEmpty;
   }
 
   /**
