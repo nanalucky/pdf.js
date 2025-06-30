@@ -1881,6 +1881,14 @@ class AnnotationEditorUIManager {
   }
 
   /**
+   * Get all the editors.
+   * @returns {Array<AnnotationEditor>}
+   */
+  getAllEditors() {
+    return this.#allEditors.values();
+  }
+
+  /**
    * Get an editor with the given id.
    * @param {string} id
    * @returns {AnnotationEditor}
