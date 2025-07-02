@@ -680,6 +680,8 @@ class AnnotationEditorUIManager {
 
   #viewer = null;
 
+  #viewerAlert = null;
+
   #updateModeCapability = null;
 
   static TRANSLATE_SMALL = 1; // page units.
@@ -822,6 +824,7 @@ class AnnotationEditorUIManager {
   constructor(
     container,
     viewer,
+    viewerAlert,
     altTextManager,
     signatureManager,
     eventBus,
@@ -839,6 +842,7 @@ class AnnotationEditorUIManager {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
     this.#viewer = viewer;
+    this.#viewerAlert = viewerAlert;
     this.#altTextManager = altTextManager;
     this.#signatureManager = signatureManager;
     this._eventBus = eventBus;
@@ -1201,6 +1205,19 @@ class AnnotationEditorUIManager {
 
     if (!found) {
       this.#annotationStorage.setValue(editor.id, editor);
+    }
+  }
+
+  a11yAlert(messageId, args = null) {
+    const viewerAlert = this.#viewerAlert;
+    if (!viewerAlert) {
+      return;
+    }
+    viewerAlert.setAttribute("data-l10n-id", messageId);
+    if (args) {
+      viewerAlert.setAttribute("data-l10n-args", JSON.stringify(args));
+    } else {
+      viewerAlert.removeAttribute("data-l10n-args");
     }
   }
 

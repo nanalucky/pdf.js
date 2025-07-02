@@ -164,6 +164,7 @@ class InkEditor extends DrawingEditor {
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
+        annotationElementId: id,
         id,
         deleted: false,
         popupRef,
