@@ -399,6 +399,9 @@ class PDFPageView extends BasePDFPageView {
   async #renderAnnotationEditorLayer() {
     let error = null;
     try {
+      this.annotationEditorLayer.updateAnnotationLayer(
+        this.annotationLayer?.annotationLayer
+      );
       await this.annotationEditorLayer.render({
         viewport: this.viewport,
         intent: "display",

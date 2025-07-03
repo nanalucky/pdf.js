@@ -939,6 +939,10 @@ class AnnotationEditorLayer {
     }
   }
 
+  updateAnnotationLayer(annotationLayer) {
+    this.#annotationLayer = annotationLayer;
+  }
+
   /**
    * Render the main editor.
    * @param {RenderEditorLayerOptions} parameters

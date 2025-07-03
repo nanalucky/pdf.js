@@ -82,6 +82,11 @@ class AnnotationEditorLayerBuilder {
     this.#structTreeLayer = options.structTreeLayer || null;
   }
 
+  updateAnnotationLayer(annotationLayer) {
+    this.#annotationLayer = annotationLayer;
+    this.annotationEditorLayer?.updateAnnotationLayer(annotationLayer);
+  }
+
   /**
    * @param {AnnotationEditorLayerBuilderRenderOptions} options
    * @returns {Promise<void>}
