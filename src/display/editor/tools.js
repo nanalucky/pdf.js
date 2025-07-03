@@ -1713,8 +1713,15 @@ class AnnotationEditorUIManager {
    * @param {string|null} editId
    * @param {boolean} [isFromKeyboard] - true if the mode change is due to a
    *   keyboard action.
+   * @param {boolean} [mustEnterInEditMode] - true if the editor must enter in
+   *   edit mode.
    */
-  async updateMode(mode, editId = null, isFromKeyboard = false) {
+  async updateMode(
+    mode,
+    editId = null,
+    isFromKeyboard = false,
+    mustEnterInEditMode = false
+  ) {
     if (this.#mode === mode) {
       return;
     }
@@ -1761,7 +1768,9 @@ class AnnotationEditorUIManager {
     for (const editor of this.#allEditors.values()) {
       if (editor.annotationElementId === editId || editor.id === editId) {
         this.setSelected(editor);
-        editor.enterInEditMode();
+        if (mustEnterInEditMode) {
+          editor.enterInEditMode();
+        }
       } else {
         editor.unselect();
       }
@@ -2073,6 +2082,11 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   setSelected(editor) {
+    this.updateToolbar({
+      mode: editor.mode,
+      editId: editor.id,
+    });
+
     this.#currentDrawingSession?.commitOrRemove();
     for (const ed of this.#selectedEditors) {
       if (ed !== editor) {
