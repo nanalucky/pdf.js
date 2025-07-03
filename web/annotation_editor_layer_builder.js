@@ -86,6 +86,11 @@ class AnnotationEditorLayerBuilder {
     this.annotationEditorLayer?.updatePageIndex(newPageIndex);
   }
 
+  updateAnnotationLayer(annotationLayer) {
+    this.#annotationLayer = annotationLayer;
+    this.annotationEditorLayer?.updateAnnotationLayer(annotationLayer);
+  }
+
   /**
    * @param {AnnotationEditorLayerBuilderRenderOptions} options
    * @returns {Promise<void>}
