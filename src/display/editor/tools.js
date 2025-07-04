@@ -1069,7 +1069,7 @@ class AnnotationEditorUIManager {
     this._supportsPinchToZoom = supportsPinchToZoom !== false;
     commentManager?.setSidebarUiManager(this);
     this.#idManager = new IdManager(annotationEditorSecondPrefix);
-    this.suppressModifiedEvent = false;
+    this.suppressEditorModifiedEvent = false;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
@@ -1121,7 +1121,7 @@ class AnnotationEditorUIManager {
     }
     this._editorUndoBar?.destroy();
     this.#pdfDocument = null;
-    this.suppressModifiedEvent = false;
+    this.suppressEditorModifiedEvent = false;
   }
 
   combinedSignal(ac) {

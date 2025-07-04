@@ -1913,7 +1913,7 @@ class AnnotationEditor {
 
   /** Dispatch an event that the editor has been modified. */
   dispatchModifiedEvent() {
-    if (this._uiManager.suppressModifiedEvent) {
+    if (this._uiManager.suppressEditorModifiedEvent) {
       return;
     }
     // debounce the event
@@ -1926,6 +1926,7 @@ class AnnotationEditor {
       this._uiManager._eventBus.dispatch("annotationeditormodified", {
         editorId,
       });
+      this._dispatchModifiedEventTimeout = null;
     }, 100);
   }
 
