@@ -33,6 +33,10 @@ class AnnotationStorage {
 
   #storage = new Map();
 
+  #eventBus;
+
+  suppressElementModifiedEvent = false;
+
   constructor() {
     // Callbacks to signal when the modification state is set or reset.
     // This is used by the viewer to only bind on `beforeunload` if forms
@@ -52,6 +56,18 @@ class AnnotationStorage {
         },
       });
     }
+  }
+
+  get eventBus() {
+    return this.#eventBus;
+  }
+
+  set eventBus(eventBus) {
+    this.#eventBus = eventBus;
+  }
+
+  get storage() {
+    return this.#storage;
   }
 
   /**
@@ -127,6 +143,12 @@ class AnnotationStorage {
       typeof this.onAnnotationEditor === "function"
     ) {
       this.onAnnotationEditor(value.constructor._type);
+    } else if (modified && !this.suppressElementModifiedEvent) {
+      this.eventBus?.dispatch("annotationelementmodified", {
+        source: this,
+        key,
+        value: this.#storage.get(key),
+      });
     }
   }
 

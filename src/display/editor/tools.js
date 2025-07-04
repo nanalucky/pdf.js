@@ -872,7 +872,7 @@ class AnnotationEditorUIManager {
     this._editorUndoBar = editorUndoBar || null;
     this._supportsPinchToZoom = supportsPinchToZoom !== false;
     this.#idManager = new IdManager(annotationEditorSecondPrefix);
-    this.suppressModifiedEvent = false;
+    this.suppressEditorModifiedEvent = false;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
@@ -918,7 +918,7 @@ class AnnotationEditorUIManager {
       this.#translationTimeoutId = null;
     }
     this._editorUndoBar?.destroy();
-    this.suppressModifiedEvent = false;
+    this.suppressEditorModifiedEvent = false;
   }
 
   combinedSignal(ac) {

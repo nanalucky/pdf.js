@@ -923,7 +923,7 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   dispatchModifiedEvent() {
-    if (this._uiManager.suppressModifiedEvent) {
+    if (this._uiManager.suppressEditorModifiedEvent) {
       return;
     }
     // Use try/catch to avoid errors during construction when the base
