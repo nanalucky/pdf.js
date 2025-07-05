@@ -143,7 +143,13 @@ class AnnotationStorage {
       typeof this.onAnnotationEditor === "function"
     ) {
       this.onAnnotationEditor(value.constructor._type);
-    } else if (modified && !this.suppressElementModifiedEvent) {
+    }
+
+    if (
+      modified &&
+      !this.suppressElementModifiedEvent &&
+      !(value instanceof AnnotationEditor)
+    ) {
       this.eventBus?.dispatch("annotationelementmodified", {
         source: this,
         key,
