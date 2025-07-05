@@ -148,7 +148,13 @@ class AnnotationStorage {
     if (value instanceof AnnotationEditor) {
       (this.#editorsMap ||= new Map()).set(value.annotationElementId, value);
       this.onAnnotationEditor?.(value.constructor._type);
-    } else if (modified && !this.suppressElementModifiedEvent) {
+    }
+
+    if (
+      modified &&
+      !this.suppressElementModifiedEvent &&
+      !(value instanceof AnnotationEditor)
+    ) {
       this.eventBus?.dispatch("annotationelementmodified", {
         source: this,
         key,

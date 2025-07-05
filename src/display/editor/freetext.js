@@ -589,7 +589,14 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.add("overlay", "enabled");
     this.div.append(this.overlayDiv);
 
-    if (this._isCopy || this.annotationElementId) {
+    if (this._isSync) {
+      this.x = baseX;
+      this.y = baseY;
+      this.fixAndSetPosition();
+      this.#setContent();
+      this._isDraggable = true;
+      this.editorDiv.contentEditable = false;
+    } else if (this._isCopy || this.annotationElementId) {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
       if (this.annotationElementId) {
@@ -638,13 +645,6 @@ class FreeTextEditor extends AnnotationEditor {
         this._moveAfterPaste(baseX, baseY);
       }
 
-      this.#setContent();
-      this._isDraggable = true;
-      this.editorDiv.contentEditable = false;
-    } else if (this._isSync) {
-      this.x = baseX;
-      this.y = baseY;
-      this.fixAndSetPosition();
       this.#setContent();
       this._isDraggable = true;
       this.editorDiv.contentEditable = false;
