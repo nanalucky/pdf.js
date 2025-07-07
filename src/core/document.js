@@ -628,7 +628,11 @@ class Page {
         intentAny ||
         (intentDisplay &&
           annotation.mustBeViewed(annotationStorage, renderForms) &&
-          annotation.mustBeViewedWhenEditing(isEditing, modifiedIds)) ||
+          annotation.mustBeViewedWhenEditing(
+            isEditing,
+            modifiedIds,
+            renderForms
+          )) ||
         (intentPrint && annotation.mustBePrinted(annotationStorage))
       ) {
         opListPromises.push(

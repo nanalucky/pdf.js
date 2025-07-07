@@ -45,6 +45,7 @@ import { GenericL10n } from "web-null_l10n";
  * @typedef {Object} AnnotationEditorLayerBuilderRenderOptions
  * @property {PageViewport} viewport
  * @property {string} [intent] - The default value is "display".
+ * @property {boolean} [renderForms] - Whether to render forms.
  */
 
 class AnnotationEditorLayerBuilder {
@@ -95,7 +96,7 @@ class AnnotationEditorLayerBuilder {
    * @param {AnnotationEditorLayerBuilderRenderOptions} options
    * @returns {Promise<void>}
    */
-  async render({ viewport, intent = "display" }) {
+  async render({ viewport, intent = "display", renderForms }) {
     if (intent !== "display") {
       return;
     }
@@ -129,6 +130,7 @@ class AnnotationEditorLayerBuilder {
       annotationLayer: this.#annotationLayer,
       textLayer: this.#textLayer,
       drawLayer: this.#drawLayer,
+      renderForms,
     });
 
     const parameters = {

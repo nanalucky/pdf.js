@@ -595,6 +595,22 @@ class AnnotationEditor {
    */
   _onTranslated(x, y) {}
 
+  /**
+   * Get the initial rect of the editor.
+   * @returns {Array<number>}
+   */
+  get initialRect() {
+    return this.#initialRect;
+  }
+
+  /**
+   * Set the initial rect of the editor.
+   * @param {Array<number>} rect
+   */
+  set initialRect([x, y, width, height]) {
+    this.#initialRect = [x, y, width, height];
+  }
+
   get _hasBeenMoved() {
     return (
       !!this.#initialRect &&
