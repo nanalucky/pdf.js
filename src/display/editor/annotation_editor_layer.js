@@ -48,6 +48,7 @@ import { StampEditor } from "./stamp.js";
  * @property {HTMLDivElement} [textLayer]
  * @property {DrawLayer} drawLayer
  * @property {PageViewport} viewport
+ * @property {boolean} renderForms
  */
 
 /**
@@ -113,6 +114,7 @@ class AnnotationEditorLayer {
     textLayer,
     viewport,
     l10n,
+    renderForms,
   }) {
     const editorTypes = [...AnnotationEditorLayer.#editorTypes.values()];
     if (!AnnotationEditorLayer._initialized) {
@@ -132,7 +134,13 @@ class AnnotationEditorLayer {
     this.#textLayer = textLayer;
     this.drawLayer = drawLayer;
     this._structTree = structTreeLayer;
+    this.renderForms = renderForms !== false;
 
+    // If renderForms is true, need to render editable annotations in
+    // annotation layer.
+    if (this.renderForms) {
+      this.enable();
+    }
     this.#uiManager.addLayer(this);
   }
 
@@ -287,7 +295,7 @@ class AnnotationEditorLayer {
       if (!editor.annotationElementId) {
         continue;
       }
-      if (editor.serialize() !== null) {
+      if (this.renderForms || editor.serialize() !== null) {
         changedAnnotations.set(editor.annotationElementId, editor);
         continue;
       } else {

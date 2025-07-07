@@ -405,6 +405,7 @@ class PDFPageView extends BasePDFPageView {
       await this.annotationEditorLayer.render({
         viewport: this.viewport,
         intent: "display",
+        renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
       });
     } catch (ex) {
       console.error("#renderAnnotationEditorLayer:", ex);

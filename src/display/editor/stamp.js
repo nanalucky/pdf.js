@@ -57,6 +57,7 @@ class StampEditor extends AnnotationEditor {
     this.#bitmapUrl = params.bitmapUrl;
     this.#bitmapFile = params.bitmapFile;
     this.defaultL10nId = "pdfjs-editor-stamp-editor";
+    this.removed = false;
   }
 
   /** @inheritdoc */
@@ -287,6 +288,7 @@ class StampEditor extends AnnotationEditor {
         this.#resizeTimeoutId = null;
       }
     }
+    this.removed = true;
     super.remove();
   }
 
@@ -923,11 +925,17 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   dispatchModifiedEvent() {
+    if (this.removed) {
+      super.dispatchModifiedEvent();
+      return;
+    }
+
     if (this._uiManager.suppressEditorModifiedEvent) {
       return;
     }
     // Use try/catch to avoid errors during construction when the base
     // constructor calls this and #bitmap is not yet initialized.
+    // Those weird duplications are due to the reason above.
     try {
       if (this.#bitmap && this.#bitmap !== null) {
         super.dispatchModifiedEvent();

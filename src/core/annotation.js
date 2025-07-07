@@ -843,7 +843,7 @@ class Annotation {
     return this.printable;
   }
 
-  mustBeViewedWhenEditing(isEditing, modifiedIds = null) {
+  mustBeViewedWhenEditing(isEditing, modifiedIds = null, renderForms = false) {
     return isEditing ? !this.data.isEditable : !modifiedIds?.has(this.data.id);
   }
 
@@ -3865,7 +3865,17 @@ class PopupAnnotation extends Annotation {
   }
 }
 
-class FreeTextAnnotation extends MarkupAnnotation {
+class EditableAnnotation extends MarkupAnnotation {
+  /** @inheritdoc */
+  mustBeViewedWhenEditing(isEditing, modifiedIds = null, renderForms = false) {
+    if (renderForms) {
+      return false;
+    }
+    return super.mustBeViewedWhenEditing(isEditing, modifiedIds, renderForms);
+  }
+}
+
+class FreeTextAnnotation extends EditableAnnotation {
   constructor(params) {
     super(params);
 
@@ -4367,7 +4377,7 @@ class CaretAnnotation extends MarkupAnnotation {
   }
 }
 
-class InkAnnotation extends MarkupAnnotation {
+class InkAnnotation extends EditableAnnotation {
   constructor(params) {
     super(params);
 
@@ -4642,7 +4652,7 @@ class InkAnnotation extends MarkupAnnotation {
   }
 }
 
-class HighlightAnnotation extends MarkupAnnotation {
+class HighlightAnnotation extends EditableAnnotation {
   constructor(params) {
     super(params);
 
@@ -4900,7 +4910,7 @@ class StrikeOutAnnotation extends MarkupAnnotation {
   }
 }
 
-class StampAnnotation extends MarkupAnnotation {
+class StampAnnotation extends EditableAnnotation {
   #savedHasOwnCanvas = null;
 
   constructor(params) {
@@ -4913,8 +4923,16 @@ class StampAnnotation extends MarkupAnnotation {
     this.data.noHTML = false;
   }
 
-  mustBeViewedWhenEditing(isEditing, modifiedIds = null) {
-    if (isEditing) {
+  mustBeViewed(annotationStorage, renderForms) {
+    const noView = annotationStorage?.get(this.data.id)?.noView;
+    if (noView !== undefined) {
+      return !noView;
+    }
+    return this.viewable && !this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
+  }
+
+  mustBeViewedWhenEditing(isEditing, modifiedIds = null, renderForms = false) {
+    if (isEditing || renderForms) {
       if (!this.data.isEditable) {
         return true;
       }

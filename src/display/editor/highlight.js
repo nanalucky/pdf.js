@@ -766,7 +766,7 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   #serializeOutlines(rect) {
-    return this.#highlightOutlines.serialize(rect, this.#getRotation()).points;
+    return this.#highlightOutlines.serialize(rect, this.#getRotation());
   }
 
   static startHighlighting(parent, isLTR, { target: textLayer, x, y }) {
@@ -1009,12 +1009,16 @@ class HighlightEditor extends AnnotationEditor {
       opacity: this.#opacity,
       thickness: this.#thickness,
       quadPoints: this.#serializeBoxes(),
-      inkLists: this.#serializeOutlines(rect),
+      outlines: this.#serializeOutlines(rect),
       pageIndex: this.pageIndex,
       rect,
       rotation: this.#getRotation(),
       structTreeParentId: this._structTreeParentId,
     };
+    if (isForCopying) {
+      serialized.inkLists = serialized.outlines.points;
+      delete serialized.outlines;
+    }
 
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
       return null;
