@@ -228,6 +228,10 @@ class AnnotationEditor {
     fakeEditor.annotationElementId = editor.annotationElementId;
     fakeEditor.deleted = true;
     fakeEditor._uiManager.addToAnnotationStorage(fakeEditor);
+
+    if (editor.parent?.renderForms) {
+      editor.parent?.getEditableAnnotation(editor.annotationElementId)?.hide();
+    }
   }
 
   /**
