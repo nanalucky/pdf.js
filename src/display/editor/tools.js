@@ -1657,13 +1657,9 @@ class AnnotationEditorUIManager {
    * Add a new layer for a page which will contains the editors.
    * @param {AnnotationEditorLayer} layer
    */
-  addLayer(layer) {
+  async addLayer(layer) {
     this.#allLayers.set(layer.pageIndex, layer);
-    if (this.#isEnabled) {
-      layer.enable();
-    } else {
-      layer.disable();
-    }
+    await (this.#isEnabled ? layer.enable() : layer.disable());
   }
 
   /**

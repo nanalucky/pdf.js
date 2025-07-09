@@ -135,13 +135,6 @@ class AnnotationEditorLayer {
     this.drawLayer = drawLayer;
     this._structTree = structTreeLayer;
     this.renderForms = renderForms !== false;
-
-    // If renderForms is true, need to render editable annotations in
-    // annotation layer.
-    if (this.renderForms) {
-      this.enable();
-    }
-    this.#uiManager.addLayer(this);
   }
 
   get isEmpty() {
@@ -284,7 +277,7 @@ class AnnotationEditorLayer {
   /**
    * Disable editor creation.
    */
-  disable() {
+  async disable() {
     this.#isDisabling = true;
     this.div.tabIndex = -1;
     this.togglePointerEvents(false);
@@ -322,6 +315,14 @@ class AnnotationEditorLayer {
         }
 
         editor = changedAnnotations.get(id);
+        if (!editor && this.renderForms) {
+          editor = await this.deserialize(editable);
+          if (editor) {
+            this.addOrRebuild(editor);
+            editor.disableEditing();
+          }
+        }
+
         if (editor) {
           this.#uiManager.addChangedExistingAnnotation(editor);
           if (editor.renderAnnotationElement(editable)) {
@@ -525,7 +526,7 @@ class AnnotationEditorLayer {
 
     // The editor will be correctly moved into the DOM (see fixAndSetPosition).
     editor.fixAndSetPosition();
-    editor.onceAdded(/* focus = */ !this.#isEnabling);
+    editor.onceAdded(/* focus = */ !(this.#isEnabling || this.#isDisabling));
     this.#uiManager.addToAnnotationStorage(editor);
     editor._reportTelemetry(editor.telemetryInitialData);
   }
@@ -654,7 +655,7 @@ class AnnotationEditorLayer {
    * Create a new editor
    * @param {Object} data
    * @param {string} [editorId]
-   * @returns {AnnotationEditor | null}
+   * @returns {Promise<AnnotationEditor | null>}
    */
   async deserialize(data, editorId) {
     return (

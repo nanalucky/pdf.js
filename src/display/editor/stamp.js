@@ -916,6 +916,13 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
+    // In renderforms mode, it's editors responsibility to show the canvas.
+    if (this.parent.renderForms && annotation.canvas) {
+      const canvas = annotation.canvas;
+      delete annotation.canvas;
+      canvas.remove();
+    }
+
     annotation.updateEdited({
       rect: this.getRect(0, 0),
     });
