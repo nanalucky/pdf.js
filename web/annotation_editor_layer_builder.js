@@ -108,6 +108,7 @@ class AnnotationEditorLayerBuilder {
     const clonedViewport = viewport.clone({ dontFlip: true });
     if (this.div) {
       this.annotationEditorLayer.update({ viewport: clonedViewport });
+      await this.#uiManager.addLayer(this.annotationEditorLayer);
       this.show();
       return;
     }
@@ -132,6 +133,8 @@ class AnnotationEditorLayerBuilder {
       drawLayer: this.#drawLayer,
       renderForms,
     });
+
+    await this.#uiManager.addLayer(this.annotationEditorLayer);
 
     const parameters = {
       viewport: clonedViewport,
