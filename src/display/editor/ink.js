@@ -150,6 +150,7 @@ class InkEditor extends DrawingEditor {
           opacity,
           borderStyle: { rawWidth: thickness },
           popupRef,
+          contentsObj,
         },
         parent: {
           page: { pageNumber },
@@ -169,12 +170,16 @@ class InkEditor extends DrawingEditor {
         id,
         deleted: false,
         popupRef,
+        comment: contentsObj?.str || null,
       };
     }
 
     const editor = await super.deserialize(data, parent, uiManager, editorId);
     editor.annotationElementId = data.id || null;
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
 
     return editor;
   }
@@ -261,6 +266,7 @@ class InkEditor extends DrawingEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
     };
+    this.addComment(serialized);
 
     if (isForCopying) {
       serialized.isCopy = true;
@@ -278,6 +284,7 @@ class InkEditor extends DrawingEditor {
   #hasElementChanged(serialized) {
     const { color, thickness, opacity, pageIndex } = this._initialData;
     return (
+      this.hasEditedComment ||
       this._hasBeenMoved ||
       this._hasBeenResized ||
       serialized.color.some((c, i) => c !== color[i]) ||
@@ -290,11 +297,15 @@ class InkEditor extends DrawingEditor {
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
     const { points, rect } = this.serializeDraw(/* isForCopying = */ false);
-    annotation.updateEdited({
+    const params = {
       rect,
       thickness: this._drawingOptions["stroke-width"],
       points,
-    });
+    };
+    if (this.hasEditedComment) {
+      params.popup = this.comment;
+    }
+    annotation.updateEdited(params);
 
     return null;
   }

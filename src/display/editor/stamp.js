@@ -754,7 +754,7 @@ class StampEditor extends AnnotationEditor {
     let missingCanvas = false;
     if (data instanceof StampAnnotationElement) {
       const {
-        data: { rect, rotation, id, structParent, popupRef },
+        data: { rect, rotation, id, structParent, popupRef, contentsObj },
         container,
         parent: {
           page: { pageNumber },
@@ -798,6 +798,7 @@ class StampEditor extends AnnotationEditor {
         isSvg: false,
         structParent,
         popupRef,
+        comment: contentsObj?.str || null,
       };
     }
     const editor = await super.deserialize(data, parent, uiManager, editorId);
@@ -824,6 +825,9 @@ class StampEditor extends AnnotationEditor {
       editor.altTextData = accessibilityData;
     }
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
     // No need to be add in the undo stack if the editor is created from an
     // existing one.
     editor.#hasBeenAddedInUndoStack = !!initialData;
@@ -850,6 +854,7 @@ class StampEditor extends AnnotationEditor {
       isSvg: this.#isSvg,
       structTreeParentId: this._structTreeParentId,
     };
+    this.addComment(serialized);
 
     if (isForCopying) {
       // We don't know what's the final destination (this pdf or another one)
@@ -918,6 +923,7 @@ class StampEditor extends AnnotationEditor {
 
     return {
       isSame:
+        !this.hasEditedComment &&
         !this._hasBeenMoved &&
         !this._hasBeenResized &&
         isSamePageIndex &&
@@ -935,9 +941,13 @@ class StampEditor extends AnnotationEditor {
       canvas.remove();
     }
 
-    annotation.updateEdited({
+    const params = {
       rect: this.getRect(0, 0),
-    });
+    };
+    if (this.hasEditedComment) {
+      params.popup = this.comment;
+    }
+    annotation.updateEdited(params);
 
     return null;
   }

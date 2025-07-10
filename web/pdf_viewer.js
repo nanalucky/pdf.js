@@ -232,6 +232,8 @@ class PDFViewer {
 
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
+  #commentManager = null;
+
   #containerTopLeft = null;
 
   #editorUndoBar = null;
@@ -318,6 +320,7 @@ class PDFViewer {
     this.downloadManager = options.downloadManager || null;
     this.findController = options.findController || null;
     this.#altTextManager = options.altTextManager || null;
+    this.#commentManager = options.commentManager || null;
     this.#signatureManager = options.signatureManager || null;
     this.#editorUndoBar = options.editorUndoBar || null;
 
@@ -937,6 +940,7 @@ class PDFViewer {
               viewer,
               this.#viewerAlert,
               this.#altTextManager,
+              this.#commentManager,
               this.#signatureManager,
               eventBus,
               pdfDocument,
@@ -2409,6 +2413,8 @@ class PDFViewer {
    *   keyboard action.
    * @property {boolean} [mustEnterInEditMode] - True if the editor must enter
    *   edit mode.
+   * @property {boolean} [editComment] - True if the editor must enter
+   *   comment edit mode.
    */
 
   /**
@@ -2419,6 +2425,7 @@ class PDFViewer {
     editId = null,
     isFromKeyboard = false,
     mustEnterInEditMode = false,
+    editComment = false,
   }) {
     if (!this.#annotationEditorUIManager) {
       throw new Error(`The AnnotationEditor is not enabled.`);
@@ -2442,7 +2449,8 @@ class PDFViewer {
         mode,
         editId,
         isFromKeyboard,
-        mustEnterInEditMode
+        mustEnterInEditMode,
+        editComment
       );
       if (
         mode !== this.#annotationEditorMode ||
