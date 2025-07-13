@@ -990,6 +990,7 @@ class HighlightEditor extends AnnotationEditor {
       editor.rotate(editor.rotation);
     } else if (inkLists || outlines) {
       editor.#isFreeHighlight = true;
+      editor.rotation = 0;
       const points = (inkLists || outlines.points)[0];
       const point = {
         x: points[0] - pageX,
