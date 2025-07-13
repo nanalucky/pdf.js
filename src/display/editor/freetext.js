@@ -795,6 +795,22 @@ class FreeTextEditor extends AnnotationEditor {
       };
     }
     const editor = await super.deserialize(data, parent, uiManager, editorId);
+    const [pageX, pageY] = editor.pageTranslation;
+    const [pageWidth, pageHeight] = editor.pageDimensions;
+    const [x, y, width, height] = editor.getRectInCurrentCoords(
+      data.rect,
+      FreeTextEditor._internalPadding,
+      FreeTextEditor._internalPadding,
+      pageX,
+      pageY,
+      pageWidth,
+      pageHeight
+    );
+    editor.x = x / pageWidth;
+    editor.y = y / pageHeight;
+    editor.width = width / pageWidth;
+    editor.height = height / pageHeight;
+
     editor.#fontSize = data.fontSize;
     editor.#color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);

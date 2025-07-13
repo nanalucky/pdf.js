@@ -1486,7 +1486,15 @@ class AnnotationEditor {
     }
   }
 
-  getRectInCurrentCoords(rect, pageHeight) {
+  getRectInCurrentCoords(
+    rect,
+    shiftX,
+    shiftY,
+    pageX,
+    pageY,
+    pageWidth,
+    pageHeight
+  ) {
     const [x1, y1, x2, y2] = rect;
 
     const width = x2 - x1;
@@ -1494,13 +1502,33 @@ class AnnotationEditor {
 
     switch (this.rotation) {
       case 0:
-        return [x1, pageHeight - y2, width, height];
+        return [
+          x1 - shiftX - pageX,
+          pageHeight - y1 - shiftY - height + pageY,
+          width,
+          height,
+        ];
       case 90:
-        return [x1, pageHeight - y1, height, width];
+        return [
+          x1 - shiftY - pageX,
+          pageHeight - y1 + shiftX + pageY,
+          height,
+          width,
+        ];
       case 180:
-        return [x2, pageHeight - y1, width, height];
+        return [
+          x1 + shiftX + width - pageX,
+          pageHeight - y1 + shiftY + pageY,
+          width,
+          height,
+        ];
       case 270:
-        return [x2, pageHeight - y2, height, width];
+        return [
+          x1 + shiftY + width - pageX,
+          pageHeight - y1 - shiftX - height + pageY,
+          height,
+          width,
+        ];
       default:
         throw new Error("Invalid rotation");
     }
@@ -1658,9 +1686,15 @@ class AnnotationEditor {
     editor._isCopy = data.isCopy || false;
     editor._isSync = data.isSync || false;
 
+    const [pageX, pageY] = editor.pageTranslation;
     const [pageWidth, pageHeight] = editor.pageDimensions;
     const [x, y, width, height] = editor.getRectInCurrentCoords(
       data.rect,
+      0,
+      0,
+      pageX,
+      pageY,
+      pageWidth,
       pageHeight
     );
 
