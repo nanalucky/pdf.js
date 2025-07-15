@@ -34,6 +34,7 @@ import {
   PixelsPerInch,
   stopEvent,
 } from "../display_utils.js";
+import { FakeEditor } from "./editor.js";
 import { HighlightToolbar } from "./toolbar.js";
 
 function bindEvents(obj, element, names) {
@@ -1180,6 +1181,23 @@ class AnnotationEditorUIManager {
       this.#annotationStorage &&
       !this.#annotationStorage.has(editor.id)
     ) {
+      this.#annotationStorage.setValue(editor.id, editor);
+    }
+  }
+
+  addFakeEditorToAnnotationStorage(editor) {
+    let found = false;
+    for (const value of this.#annotationStorage.storage.values()) {
+      if (
+        value instanceof FakeEditor &&
+        value.annotationElementId === editor.annotationElementId
+      ) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
       this.#annotationStorage.setValue(editor.id, editor);
     }
   }
