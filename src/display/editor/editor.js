@@ -239,7 +239,7 @@ class AnnotationEditor {
     });
     fakeEditor.annotationElementId = editor.annotationElementId;
     fakeEditor.deleted = true;
-    fakeEditor._uiManager.addToAnnotationStorage(fakeEditor);
+    fakeEditor._uiManager.addFakeEditorToAnnotationStorage(fakeEditor);
 
     if (editor.parent?.renderForms) {
       editor.parent?.getEditableAnnotation(editor.annotationElementId)?.hide();
@@ -2232,6 +2232,7 @@ class AnnotationEditor {
       this._editToolbar.show();
       return;
     }
+    console.trace("editor select", this.id, this.annotationElementId);
     this.isSelected = true;
     this.makeResizable();
     this.div?.classList.add("selectedEditor");
@@ -2263,6 +2264,7 @@ class AnnotationEditor {
     if (!this.isSelected) {
       return;
     }
+    console.trace("editor unselect", this.id, this.annotationElementId);
     this.isSelected = false;
     this.#resizersDiv?.classList.add("hidden");
     this.div?.classList.remove("selectedEditor");
@@ -2522,4 +2524,4 @@ class FakeEditor extends AnnotationEditor {
   }
 }
 
-export { AnnotationEditor };
+export { AnnotationEditor, FakeEditor };
