@@ -1928,7 +1928,6 @@ class AnnotationEditor {
     if (this.isSelected && this._editToolbar) {
       return;
     }
-    console.trace("editor select", this.id, this.annotationElementId);
     this.isSelected = true;
     this.makeResizable();
     this.div?.classList.add("selectedEditor");
@@ -1954,7 +1953,6 @@ class AnnotationEditor {
     if (!this.isSelected) {
       return;
     }
-    console.trace("editor unselect", this.id, this.annotationElementId);
     this.isSelected = false;
     this.#resizersDiv?.classList.add("hidden");
     this.div?.classList.remove("selectedEditor");
