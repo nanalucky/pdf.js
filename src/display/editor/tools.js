@@ -1815,9 +1815,6 @@ class AnnotationEditorUIManager {
       case AnnotationEditorParamsType.CREATE:
         this.currentLayer.addNewEditor(value);
         return;
-      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
-        this.#mainHighlightColorPicker?.updateColor(value);
-        break;
       case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
         this._eventBus.dispatch("reporttelemetry", {
           source: this,
