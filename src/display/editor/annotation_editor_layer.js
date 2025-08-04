@@ -317,7 +317,7 @@ class AnnotationEditorLayer {
             return;
           }
           let id;
-          const regex = new RegExp(`^${AnnotationEditorPrefix}[0-9]+$`);
+          const regex = new RegExp(`^${AnnotationEditorPrefix}.+[0-9]+$`);
           for (const element of elements) {
             if (regex.test(element.id)) {
               id = element.id;
