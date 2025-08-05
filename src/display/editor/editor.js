@@ -1349,6 +1349,30 @@ class AnnotationEditor {
   }
 
   /**
+   * mouseenter callback.
+   * @param {MouseEvent} event
+   */
+  mouseenter(event) {
+    if (this.#comment && this.#comment.data.text?.length > 0) {
+      this._uiManager._eventBus.dispatch("webcrt:mouseenterannotationeditor", {
+        editor: this,
+      });
+    }
+  }
+
+  /**
+   * mouseleave callback.
+   * @param {MouseEvent} event
+   */
+  mouseleave(event) {
+    if (this.#comment && this.#comment.data.text?.length > 0) {
+      this._uiManager._eventBus.dispatch("webcrt:mouseleaveannotationeditor", {
+        editor: this,
+      });
+    }
+  }
+
+  /**
    * Render this editor in a div.
    * @returns {HTMLDivElement | null}
    */
@@ -1382,7 +1406,13 @@ class AnnotationEditor {
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
 
-    bindEvents(this, div, ["keydown", "pointerdown", "dblclick"]);
+    bindEvents(this, div, [
+      "keydown",
+      "pointerdown",
+      "dblclick",
+      "mouseenter",
+      "mouseleave",
+    ]);
 
     if (this.isResizable && this._uiManager._supportsPinchToZoom) {
       this.#touchManager ||= new TouchManager({
