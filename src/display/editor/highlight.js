@@ -664,7 +664,9 @@ class HighlightEditor extends AnnotationEditor {
     }
   }
 
+  /** @inheritdoc */
   pointerleave() {
+    super.pointerleave();
     if (!this.isSelected) {
       this.parent?.drawLayer.updateProperties(this.#outlineId, {
         rootClass: {

@@ -1349,26 +1349,27 @@ class AnnotationEditor {
   }
 
   /**
-   * mouseenter callback.
-   * @param {MouseEvent} event
+   * pointerenter callback.
    */
-  mouseenter(event) {
+  pointerenter(event) {
     if (this.#comment && this.#comment.data.text?.length > 0) {
-      this._uiManager._eventBus.dispatch("webcrt:mouseenterannotationeditor", {
-        editor: this,
-      });
+      this._uiManager._eventBus.dispatch(
+        "webcrt:pointerenterannotationeditor",
+        { editor: this }
+      );
     }
   }
 
   /**
-   * mouseleave callback.
+   * pointerleave callback.
    * @param {MouseEvent} event
    */
-  mouseleave(event) {
+  pointerleave(event) {
     if (this.#comment && this.#comment.data.text?.length > 0) {
-      this._uiManager._eventBus.dispatch("webcrt:mouseleaveannotationeditor", {
-        editor: this,
-      });
+      this._uiManager._eventBus.dispatch(
+        "webcrt:pointerleaveannotationeditor",
+        {}
+      );
     }
   }
 
@@ -1410,8 +1411,8 @@ class AnnotationEditor {
       "keydown",
       "pointerdown",
       "dblclick",
-      "mouseenter",
-      "mouseleave",
+      "pointerenter",
+      "pointerleave",
     ]);
 
     if (this.isResizable && this._uiManager._supportsPinchToZoom) {
