@@ -937,6 +937,11 @@ class FreeTextEditor extends AnnotationEditor {
     super.resetAnnotationElement(annotation);
     annotation.resetEdited();
   }
+
+  /** @inheritdoc */
+  get content() {
+    return this.#content;
+  }
 }
 
 export { FreeTextEditor };
