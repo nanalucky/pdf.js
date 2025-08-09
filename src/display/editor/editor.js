@@ -1348,11 +1348,18 @@ class AnnotationEditor {
     return this.parent.boundingClientRect;
   }
 
+  get content() {
+    return null;
+  }
+
   /**
    * pointerenter callback.
    */
   pointerenter(event) {
-    if (this.#comment && this.#comment.data.text?.length > 0) {
+    if (
+      (this.#comment && this.#comment.data.text?.length > 0) ||
+      this.content?.length > 0
+    ) {
       this._uiManager._eventBus.dispatch(
         "webcrt:pointerenterannotationeditor",
         {
@@ -1368,7 +1375,10 @@ class AnnotationEditor {
    * @param {MouseEvent} event
    */
   pointerleave(event) {
-    if (this.#comment && this.#comment.data.text?.length > 0) {
+    if (
+      (this.#comment && this.#comment.data.text?.length > 0) ||
+      this.content?.length > 0
+    ) {
       this._uiManager._eventBus.dispatch(
         "webcrt:pointerleaveannotationeditor",
         {}

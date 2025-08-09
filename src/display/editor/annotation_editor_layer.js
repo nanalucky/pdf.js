@@ -261,7 +261,7 @@ class AnnotationEditorLayer {
     this.div.tabIndex = 0;
     this.togglePointerEvents(true);
     this.div.classList.toggle("nonEditing", false);
-    this.#removeEditorsBorder();
+    this.#removeAllEditorsBorder();
     this.#textLayerDblClickAC?.abort();
     this.#textLayerDblClickAC = null;
     const annotationElementIds = new Set();
@@ -308,7 +308,6 @@ class AnnotationEditorLayer {
     this.div.tabIndex = -1;
     this.togglePointerEvents(false);
     this.div.classList.toggle("nonEditing", true);
-    this.#copyEditorsBorder();
     if (this.#textLayer && !this.#textLayerDblClickAC) {
       this.#textLayerDblClickAC = new AbortController();
       const signal = this.#uiManager.combinedSignal(this.#textLayerDblClickAC);
@@ -422,32 +421,68 @@ class AnnotationEditorLayer {
     this.disableTextSelection();
     this.toggleAnnotationLayerPointerEvents(true);
     annotationLayer?.updateFakeAnnotations(needFakeAnnotation);
+    this.#addAllEditorsBorder();
 
     this.#isDisabling = false;
   }
 
-  #copyEditorsBorder() {
-    this.#removeEditorsBorder();
+  addEditorBorder(editor) {
+    if (this.#uiManager.getMode() !== AnnotationEditorType.NONE) {
+      return;
+    }
+    const editable = editor.annotationElementId
+      ? this.getEditableAnnotation(editor.annotationElementId)
+      : null;
+    if (editable?.hasPopupElement) {
+      return;
+    }
+
+    // If the div already exists, we don't need to create a new one
+    const div =
+      this.div.querySelector(`.editor-border[data-editor-id="${editor.id}"]`) ||
+      document.createElement("div");
+    div.style.left = editor.div.style.left;
+    div.style.top = editor.div.style.top;
+    div.style.width =
+      editor.div.style.width || `${(100 * editor.width).toFixed(2)}%`;
+    div.style.height =
+      editor.div.style.height || `${(100 * editor.height).toFixed(2)}%`;
+    div.style.position = "absolute";
+    div.style.pointerEvents = "auto";
+    div.classList.add("editor-border");
+    div.dataset.editorId = editor.id;
+    div.addEventListener("pointerenter", e => {
+      // In case the editor has been removed, the div will still be in the DOM
+      const _editor = this.#editors.get(e.target.dataset.editorId);
+      if (_editor) {
+        _editor.pointerenter(e);
+      }
+    });
+    div.addEventListener("pointerleave", e => {
+      // In case the editor has been removed, the div will still be in the DOM
+      const _editor = this.#editors.get(e.target.dataset.editorId);
+      if (_editor) {
+        _editor.pointerleave(e);
+      }
+    });
+    div.addEventListener("dblclick", e => {
+      // In case the editor has been removed, the div will still be in the DOM
+      const _editor = this.#editors.get(e.target.dataset.editorId);
+      if (_editor) {
+        _editor.dblclick(e);
+      }
+    });
+    this.div.append(div);
+  }
+
+  #addAllEditorsBorder() {
+    this.#removeAllEditorsBorder();
     for (const editor of this.#editors.values()) {
-      const div = document.createElement("div");
-      div.style.left = editor.div.style.left;
-      div.style.top = editor.div.style.top;
-      div.style.width =
-        editor.div.style.width || `${(100 * editor.width).toFixed(2)}%`;
-      div.style.height =
-        editor.div.style.height || `${(100 * editor.height).toFixed(2)}%`;
-      div.style.position = "absolute";
-      div.style.pointerEvents = "auto";
-      div.classList.add("editor-border");
-      div.dataset.editorId = editor.id;
-      div.addEventListener("pointerenter", e => editor.pointerenter(e));
-      div.addEventListener("pointerleave", e => editor.pointerleave(e));
-      div.addEventListener("dblclick", e => editor.dblclick(e));
-      this.div.append(div);
+      this.addEditorBorder(editor);
     }
   }
 
-  #removeEditorsBorder() {
+  #removeAllEditorsBorder() {
     for (const div of this.div.querySelectorAll(".editor-border")) {
       div.remove();
     }
