@@ -1252,7 +1252,10 @@ class AnnotationEditor {
     if (this.#comment && this.#comment.data.text?.length > 0) {
       this._uiManager._eventBus.dispatch(
         "webcrt:pointerenterannotationeditor",
-        { editor: this }
+        {
+          event,
+          editor: this,
+        }
       );
     }
   }

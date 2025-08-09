@@ -247,7 +247,7 @@ class AnnotationEditorLayer {
     this.#isEnabling = true;
     this.div.tabIndex = 0;
     this.togglePointerEvents(true);
-    this.#removeEditorsBorderFromTextLayer();
+    this.#removeEditorsBorder();
     this.#textLayerDblClickAC?.abort();
     this.#textLayerDblClickAC = null;
     const annotationElementIds = new Set();
@@ -292,7 +292,7 @@ class AnnotationEditorLayer {
     this.#isDisabling = true;
     this.div.tabIndex = -1;
     this.togglePointerEvents(false);
-    this.#copyEditorsBorderToTextLayer();
+    this.#copyEditorsBorder();
     if (this.#textLayer && !this.#textLayerDblClickAC) {
       this.#textLayerDblClickAC = new AbortController();
       const signal = this.#uiManager.combinedSignal(this.#textLayerDblClickAC);
@@ -409,11 +409,8 @@ class AnnotationEditorLayer {
     this.#isDisabling = false;
   }
 
-  #copyEditorsBorderToTextLayer() {
-    if (!this.#textLayer) {
-      return;
-    }
-    this.#removeEditorsBorderFromTextLayer();
+  #copyEditorsBorder() {
+    this.#removeEditorsBorder();
     for (const editor of this.#editors.values()) {
       const div = document.createElement("div");
       div.style.left = editor.div.style.left;
@@ -423,19 +420,18 @@ class AnnotationEditorLayer {
       div.style.height =
         editor.div.style.height || `${(100 * editor.height).toFixed(2)}%`;
       div.style.position = "absolute";
+      div.style.pointerEvents = "auto";
       div.classList.add("editor-border");
       div.dataset.editorId = editor.id;
-      div.addEventListener("pointerenter", () => editor.pointerenter());
-      div.addEventListener("pointerleave", () => editor.pointerleave());
-      this.#textLayer.div.append(div);
+      div.addEventListener("pointerenter", e => editor.pointerenter(e));
+      div.addEventListener("pointerleave", e => editor.pointerleave(e));
+      div.addEventListener("dblclick", e => editor.dblclick(e));
+      this.div.append(div);
     }
   }
 
-  #removeEditorsBorderFromTextLayer() {
-    if (!this.#textLayer) {
-      return;
-    }
-    for (const div of this.#textLayer.div.querySelectorAll(".editor-border")) {
+  #removeEditorsBorder() {
+    for (const div of this.div.querySelectorAll(".editor-border")) {
       div.remove();
     }
   }
