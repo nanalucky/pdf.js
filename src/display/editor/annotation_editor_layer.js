@@ -247,6 +247,7 @@ class AnnotationEditorLayer {
     this.#isEnabling = true;
     this.div.tabIndex = 0;
     this.togglePointerEvents(true);
+    this.#removeEditorsBorderFromTextLayer();
     this.#textLayerDblClickAC?.abort();
     this.#textLayerDblClickAC = null;
     const annotationElementIds = new Set();
@@ -291,6 +292,7 @@ class AnnotationEditorLayer {
     this.#isDisabling = true;
     this.div.tabIndex = -1;
     this.togglePointerEvents(false);
+    this.#copyEditorsBorderToTextLayer();
     if (this.#textLayer && !this.#textLayerDblClickAC) {
       this.#textLayerDblClickAC = new AbortController();
       const signal = this.#uiManager.combinedSignal(this.#textLayerDblClickAC);
@@ -405,6 +407,37 @@ class AnnotationEditorLayer {
     this.toggleAnnotationLayerPointerEvents(true);
 
     this.#isDisabling = false;
+  }
+
+  #copyEditorsBorderToTextLayer() {
+    if (!this.#textLayer) {
+      return;
+    }
+    this.#removeEditorsBorderFromTextLayer();
+    for (const editor of this.#editors.values()) {
+      const div = document.createElement("div");
+      div.style.left = editor.div.style.left;
+      div.style.top = editor.div.style.top;
+      div.style.width =
+        editor.div.style.width || `${(100 * editor.width).toFixed(2)}%`;
+      div.style.height =
+        editor.div.style.height || `${(100 * editor.height).toFixed(2)}%`;
+      div.style.position = "absolute";
+      div.classList.add("editor-border");
+      div.dataset.editorId = editor.id;
+      div.addEventListener("pointerenter", () => editor.pointerenter());
+      div.addEventListener("pointerleave", () => editor.pointerleave());
+      this.#textLayer.div.append(div);
+    }
+  }
+
+  #removeEditorsBorderFromTextLayer() {
+    if (!this.#textLayer) {
+      return;
+    }
+    for (const div of this.#textLayer.div.querySelectorAll(".editor-border")) {
+      div.remove();
+    }
   }
 
   getEditableAnnotation(id) {
