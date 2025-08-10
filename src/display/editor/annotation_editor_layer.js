@@ -413,6 +413,7 @@ class AnnotationEditorLayer {
     if (this.#uiManager.getMode() !== AnnotationEditorType.NONE) {
       return;
     }
+    let isEditor = true;
     let left = editor.div.style.left;
     let top = editor.div.style.top;
     let width = editor.div.style.width || `${(100 * editor.width).toFixed(2)}%`;
@@ -421,6 +422,7 @@ class AnnotationEditorLayer {
     if (editor.div.classList.contains("hidden")) {
       const editable = this.getEditableAnnotation(editor.annotationElementId);
       if (editable) {
+        isEditor = false;
         const { pageWidth, pageHeight } = this.viewport.rawDims;
         left = editable.container.style.left;
         top = editable.container.style.top;
@@ -438,7 +440,12 @@ class AnnotationEditorLayer {
     div.style.width = width;
     div.style.height = height;
     div.style.position = "absolute";
+    div.style.zIndex = "1000";
     div.style.pointerEvents = "auto";
+    if (isEditor) {
+      div.style.transform = `rotate(${360 - editor.rotation}deg)`;
+      div.style.transformOrigin = "0 0";
+    }
     div.classList.add("editor-border");
     div.dataset.editorId = editor.id;
     div.addEventListener("pointerenter", e => {
