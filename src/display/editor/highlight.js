@@ -970,7 +970,7 @@ class HighlightEditor extends AnnotationEditor {
       editor.#thickness = data.thickness;
     }
     editor._initialData = initialData;
-    if (data.comment) {
+    if (data.comment || data.popup) {
       editor.setCommentData(data);
     }
 

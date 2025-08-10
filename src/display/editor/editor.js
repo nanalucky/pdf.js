@@ -1273,14 +1273,15 @@ class AnnotationEditor {
       this.removeStandaloneCommentButton();
       this._uiManager.removeComment(this);
     }
+    this.dispatchModifiedEvent();
   }
 
-  setCommentData({ comment, popupRef, richText }) {
-    if (!popupRef) {
+  setCommentData({ comment, popupRef, richText, popup }) {
+    if (!popupRef && !popup) {
       return;
     }
     this.#comment ||= new Comment(this);
-    this.#comment.setInitialText(comment, richText);
+    this.#comment.setInitialText(comment ?? popup?.contents, richText);
 
     if (!this.annotationElementId) {
       return;
@@ -1969,7 +1970,7 @@ class AnnotationEditor {
       parent,
       id: editorId || uiManager.getId(),
       uiManager,
-      annotationElementId: data.annotationElementId,
+      annotationElementId: data.annotationElementId || data.id,
       creationDate: data.creationDate,
       modificationDate: data.modificationDate,
     });
@@ -1994,6 +1995,7 @@ class AnnotationEditor {
     editor.y = y / pageHeight;
     editor.width = width / pageWidth;
     editor.height = height / pageHeight;
+    editor.addCommentButton();
 
     return editor;
   }

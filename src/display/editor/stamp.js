@@ -827,9 +827,10 @@ class StampEditor extends AnnotationEditor {
       editor.altTextData = accessibilityData;
     }
     editor._initialData = initialData;
-    if (data.comment) {
+    if (data.comment || data.popup) {
       editor.setCommentData(data);
     }
+
     // No need to be add in the undo stack if the editor is created from an
     // existing one.
     editor.#hasBeenAddedInUndoStack = !!initialData;

@@ -851,7 +851,7 @@ class FreeTextEditor extends AnnotationEditor {
     editor.color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor._initialData = initialData;
-    if (data.comment) {
+    if (data.comment || data.popup) {
       editor.setCommentData(data);
     }
 

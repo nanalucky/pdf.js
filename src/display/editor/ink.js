@@ -183,7 +183,7 @@ class InkEditor extends DrawingEditor {
     const editor = await super.deserialize(data, parent, uiManager, editorId);
     editor.annotationElementId = data.id || null;
     editor._initialData = initialData;
-    if (data.comment) {
+    if (data.comment || data.popup) {
       editor.setCommentData(data);
     }
 
