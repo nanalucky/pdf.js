@@ -413,17 +413,30 @@ class AnnotationEditorLayer {
     if (this.#uiManager.getMode() !== AnnotationEditorType.NONE) {
       return;
     }
+    let left = editor.div.style.left;
+    let top = editor.div.style.top;
+    let width = editor.div.style.width || `${(100 * editor.width).toFixed(2)}%`;
+    let height =
+      editor.div.style.height || `${(100 * editor.height).toFixed(2)}%`;
+    if (editor.div.classList.contains("hidden")) {
+      const editable = this.getEditableAnnotation(editor.annotationElementId);
+      if (editable) {
+        const { pageWidth, pageHeight } = this.viewport.rawDims;
+        left = editable.container.style.left;
+        top = editable.container.style.top;
+        width = `${((100 * editable.width) / pageWidth).toFixed(2)}%`;
+        height = `${((100 * editable.height) / pageHeight).toFixed(2)}%`;
+      }
+    }
 
     // If the div already exists, we don't need to create a new one
     const div =
       this.div.querySelector(`.editor-border[data-editor-id="${editor.id}"]`) ||
       document.createElement("div");
-    div.style.left = editor.div.style.left;
-    div.style.top = editor.div.style.top;
-    div.style.width =
-      editor.div.style.width || `${(100 * editor.width).toFixed(2)}%`;
-    div.style.height =
-      editor.div.style.height || `${(100 * editor.height).toFixed(2)}%`;
+    div.style.left = left;
+    div.style.top = top;
+    div.style.width = width;
+    div.style.height = height;
     div.style.position = "absolute";
     div.style.pointerEvents = "auto";
     div.classList.add("editor-border");
