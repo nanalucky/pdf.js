@@ -1216,6 +1216,7 @@ class AnnotationEditor {
       this.#comment = new Comment(this);
     }
     this.#comment.data = text;
+    this.dispatchModifiedEvent();
   }
 
   setCommentData(text) {
@@ -1806,7 +1807,7 @@ class AnnotationEditor {
       parent,
       id: editorId || parent.getNextId(),
       uiManager,
-      annotationElementId: data.annotationElementId,
+      annotationElementId: data.annotationElementId || data.id,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
@@ -1829,6 +1830,7 @@ class AnnotationEditor {
     editor.y = y / pageHeight;
     editor.width = width / pageWidth;
     editor.height = height / pageHeight;
+    editor.addCommentButton();
 
     return editor;
   }

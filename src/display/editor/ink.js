@@ -180,6 +180,9 @@ class InkEditor extends DrawingEditor {
     if (data.comment) {
       editor.setCommentData(data.comment);
     }
+    if (data.popup) {
+      editor.setCommentData(data.popup.contents);
+    }
 
     return editor;
   }

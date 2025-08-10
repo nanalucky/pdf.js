@@ -828,6 +828,10 @@ class StampEditor extends AnnotationEditor {
     if (data.comment) {
       editor.setCommentData(data.comment);
     }
+    if (data.popup) {
+      editor.setCommentData(data.popup.contents);
+    }
+
     // No need to be add in the undo stack if the editor is created from an
     // existing one.
     editor.#hasBeenAddedInUndoStack = !!initialData;

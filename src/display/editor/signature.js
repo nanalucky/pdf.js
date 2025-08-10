@@ -439,6 +439,9 @@ class SignatureEditor extends DrawingEditor {
     editor.#isExtracted = data.areContours;
     editor.description = data.accessibilityData?.alt || "";
     editor.#signatureUUID = data.uuid;
+    if (data.popup) {
+      editor.setCommentData(data.popup.contents);
+    }
     return editor;
   }
 }
