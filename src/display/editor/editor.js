@@ -1202,6 +1202,9 @@ class AnnotationEditor {
   }
 
   get comment() {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
     const comment = this.#comment;
     return {
       text: comment.data.text,
