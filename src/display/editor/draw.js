@@ -405,7 +405,6 @@ class DrawingEditor extends AnnotationEditor {
     if (this.#mustBeCommitted) {
       this.#mustBeCommitted = false;
       this.commit();
-      this.parent.setSelected(this);
       if (focus && this.isOnScreen) {
         this.div.focus();
       }

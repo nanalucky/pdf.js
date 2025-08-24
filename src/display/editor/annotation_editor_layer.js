@@ -252,6 +252,10 @@ class AnnotationEditorLayer {
       : this.#uiManager.getEditors(this.pageIndex);
   }
 
+  setEnabling(value) {
+    this.#isEnabling = value;
+  }
+
   /**
    * Enable pointer events on the main div in order to enable
    * editor creation.
