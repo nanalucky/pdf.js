@@ -437,6 +437,7 @@ class SignatureEditor extends DrawingEditor {
     if (data.comment || data.popup) {
       editor.setCommentData(data);
     }
+    editor.dispatchModifiedEvent();
     return editor;
   }
 
@@ -446,19 +447,11 @@ class SignatureEditor extends DrawingEditor {
       super.dispatchModifiedEvent();
       return;
     }
-
     if (this._uiManager.suppressEditorModifiedEvent) {
       return;
     }
-    // Use try/catch to avoid errors during construction when the base
-    // constructor calls this and #signatureData is not yet initialized.
-    // Those weird duplications are due to the reason above.
-    try {
-      if (this.#signatureData && this.#signatureData !== null) {
-        super.dispatchModifiedEvent();
-      }
-    } catch {
-      // do nothing
+    if (this._drawId !== undefined && this._drawId !== null) {
+      super.dispatchModifiedEvent();
     }
   }
 }
