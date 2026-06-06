@@ -634,20 +634,24 @@ class StampEditor extends AnnotationEditor {
         newHeight = Math.ceil(newHeight / 2);
       }
 
-      const offscreen = new OffscreenCanvas(newWidth, newHeight);
-      const ctx = offscreen.getContext("2d");
-      ctx.drawImage(
-        bitmap,
-        0,
-        0,
-        prevWidth,
-        prevHeight,
-        0,
-        0,
-        newWidth,
-        newHeight
-      );
-      bitmap = offscreen.transferToImageBitmap();
+      try {
+        const offscreen = new OffscreenCanvas(newWidth, newHeight);
+        const ctx = offscreen.getContext("2d");
+        ctx.drawImage(
+          bitmap,
+          0,
+          0,
+          prevWidth,
+          prevHeight,
+          0,
+          0,
+          newWidth,
+          newHeight
+        );
+        bitmap = offscreen.transferToImageBitmap();
+      } catch {
+        return bitmap;
+      }
     }
 
     return bitmap;
