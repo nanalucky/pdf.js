@@ -21,12 +21,15 @@ class PDFScriptingManagerComponents extends PDFScriptingManager {
     // The default viewer already handles adding/removing of DOM events,
     // hence limit this to only the viewer components.
     if (!options.externalServices) {
-      (options.container || window).addEventListener("updatefromsandbox", event => {
-        options.eventBus.dispatch("updatefromsandbox", {
-          source: window,
-          detail: event.detail,
-        });
-      });
+      (options.container || window).addEventListener(
+        "updatefromsandbox",
+        event => {
+          options.eventBus.dispatch("updatefromsandbox", {
+            source: window,
+            detail: event.detail,
+          });
+        }
+      );
     }
 
     options.externalServices ||= {

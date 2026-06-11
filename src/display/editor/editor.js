@@ -2555,6 +2555,8 @@ class AnnotationEditor {
 
 // This class is used to fake an editor which has been deleted.
 class FakeEditor extends AnnotationEditor {
+  isFakeEditor = true;
+
   constructor(params) {
     super(params);
     this.annotationElementId = params.annotationElementId;

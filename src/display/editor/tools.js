@@ -35,7 +35,6 @@ import {
   PixelsPerInch,
   stopEvent,
 } from "../display_utils.js";
-import { FakeEditor } from "./editor.js";
 import { FloatingToolbar } from "./toolbar.js";
 import { internalOpt } from "../../shared/internal_evt.js";
 
@@ -1541,7 +1540,7 @@ class AnnotationEditorUIManager {
     let found = false;
     for (const value of this.#annotationStorage.storage.values()) {
       if (
-        value instanceof FakeEditor &&
+        value.isFakeEditor &&
         value.annotationElementId === editor.annotationElementId
       ) {
         found = true;

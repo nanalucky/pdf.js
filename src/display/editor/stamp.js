@@ -153,9 +153,7 @@ class StampEditor extends AnnotationEditor {
       } catch {}
     }
 
-    if (this.isInEditMode()) {
-      this.div.focus();
-    }
+    this.div.focus();
   }
 
   async mlGuessAltText(imageData = null, updateAltTextData = true) {
