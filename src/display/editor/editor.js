@@ -1347,6 +1347,9 @@ class AnnotationEditor {
     return this.parent.boundingClientRect;
   }
 
+  /**
+   * @returns {string | null}
+   */
   get content() {
     return null;
   }
