@@ -142,7 +142,7 @@ class AnnotationEditorLayer {
     this.#textLayer = textLayer;
     this.drawLayer = drawLayer;
     this._structTree = structTreeLayer;
-    this.renderForms = renderForms !== false;
+    this.renderForms = !!renderForms;
   }
 
   get isEmpty() {
@@ -369,7 +369,7 @@ class AnnotationEditorLayer {
           needFakeAnnotation.push(editor);
           continue;
         }
-        if (this.renderForms || editor.serialize() !== null) {
+        if (editor.serialize() !== null) {
           changedAnnotations.set(editor.annotationElementId, editor);
           continue;
         } else {
@@ -395,14 +395,6 @@ class AnnotationEditorLayer {
         }
 
         editor = changedAnnotations.get(id);
-        if (!editor && this.renderForms) {
-          editor = await this.deserialize(editable);
-          if (editor) {
-            this.addOrRebuild(editor);
-            editor.disableEditing();
-          }
-        }
-
         if (editor) {
           this.#uiManager.addChangedExistingAnnotation(editor);
           if (editor.renderAnnotationElement(editable)) {

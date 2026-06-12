@@ -928,10 +928,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     annotation.updateEdited({
       rect: this.getPDFRect(),
-      popup:
-        this._uiManager.hasCommentManager() || this.hasEditedComment
-          ? this.comment
-          : { text: this.#content },
+      popup: this.hasEditedComment ? this.comment : { text: this.#content },
     });
 
     return content;

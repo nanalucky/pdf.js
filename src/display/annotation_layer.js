@@ -2977,6 +2977,7 @@ class PopupElement {
       this.remove();
       return;
     }
+    const wasVisible = this.isVisible;
     this.#addEventListeners();
     this.#updates ||= {
       contentsObj: this.#contentsObj,
@@ -2985,13 +2986,17 @@ class PopupElement {
     if (rect) {
       this.#position = null;
     }
-    if (popup && popup.text) {
-      this.#richText = this.#makePopupContent(popup.text);
+    const popupText = popup?.text ?? popup?.contents;
+    if (popupText) {
+      this.#richText = this.#makePopupContent(popupText);
       this.#dateObj = PDFDateString.toDateObject(popup.date);
       this.#contentsObj = null;
     }
     this.#popup?.remove();
     this.#popup = null;
+    if (wasVisible) {
+      this.#show();
+    }
   }
 
   resetEdited() {

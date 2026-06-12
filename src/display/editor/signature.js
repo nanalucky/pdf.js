@@ -309,7 +309,6 @@ class SignatureEditor extends DrawingEditor {
     });
 
     this.div.hidden = false;
-    this.dispatchModifiedEvent();
   }
 
   getFromImage(bitmap) {
@@ -437,7 +436,6 @@ class SignatureEditor extends DrawingEditor {
     if (data.comment || data.popup) {
       editor.setCommentData(data);
     }
-    editor.dispatchModifiedEvent();
     return editor;
   }
 
