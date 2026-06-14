@@ -630,6 +630,7 @@ class PDFPageView extends BasePDFPageView {
     keepXfaLayer = false,
     keepTextLayer = false,
     keepCanvasWrapper = false,
+    keepVisible = false,
     preserveDetailViewState = false,
   } = {}) {
     const keepPdfBugGroups = this.pdfPage?._pdfBug ?? false;
@@ -673,23 +674,25 @@ class PDFPageView extends BasePDFPageView {
     }
     div.removeAttribute("data-loaded");
 
-    if (annotationLayerNode) {
+    if (annotationLayerNode && !keepVisible) {
       // Hide the annotation layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.annotationLayer.hide();
     }
-    if (annotationEditorLayerNode) {
+    if (annotationEditorLayerNode && !keepVisible) {
       this.annotationEditorLayer.hide();
     }
-    if (xfaLayerNode) {
+    if (xfaLayerNode && !keepVisible) {
       // Hide the XFA layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.xfaLayer.hide();
     }
-    if (textLayerNode) {
+    if (textLayerNode && !keepVisible) {
       this.textLayer.hide();
     }
-    this.structTreeLayer?.hide();
+    if (!keepVisible) {
+      this.structTreeLayer?.hide();
+    }
 
     if (!keepCanvasWrapper && this.#canvasWrapper) {
       this.#canvasWrapper = null;
@@ -723,6 +726,7 @@ class PDFPageView extends BasePDFPageView {
       keepXfaLayer: true,
       keepTextLayer: true,
       keepCanvasWrapper: true,
+      keepVisible: true,
     });
   }
 
