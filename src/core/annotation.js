@@ -4048,6 +4048,8 @@ class EditableAnnotation extends MarkupAnnotation {
 }
 
 class FreeTextAnnotation extends EditableAnnotation {
+  #savedHasOwnCanvas = null;
+
   constructor(params) {
     super(params);
 
@@ -4107,6 +4109,22 @@ class FreeTextAnnotation extends EditableAnnotation {
 
   get hasTextContent() {
     return this._hasAppearance;
+  }
+
+  mustBeViewedWhenEditing(isEditing, modifiedIds = null, renderForms = false) {
+    if (isEditing || renderForms) {
+      if (!this.data.isEditable) {
+        return true;
+      }
+      this.#savedHasOwnCanvas ??= this.data.hasOwnCanvas;
+      this.data.hasOwnCanvas = true;
+      return true;
+    }
+    if (this.#savedHasOwnCanvas !== null) {
+      this.data.hasOwnCanvas = this.#savedHasOwnCanvas;
+      this.#savedHasOwnCanvas = null;
+    }
+    return !modifiedIds?.has(this.data.id);
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {

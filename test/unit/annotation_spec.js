@@ -4352,6 +4352,33 @@ describe("annotation", function () {
       );
     });
 
+    it("should render in its own canvas when forms are rendered", async function () {
+      const freeTextDict = new Dict();
+      freeTextDict.set("Type", Name.get("Annot"));
+      freeTextDict.set("Subtype", Name.get("FreeText"));
+      freeTextDict.set("Rect", [12, 34, 56, 78]);
+      freeTextDict.set("Contents", "Hello PDF.js World!");
+      freeTextDict.set("DA", "/Helv 10 Tf 0 g");
+
+      const freeTextRef = Ref.get(143, 0);
+      const xref = new XRefMock([{ ref: freeTextRef, data: freeTextDict }]);
+      const annotation = await AnnotationFactory.create(
+        xref,
+        freeTextRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+
+      const { data } = annotation;
+      const hasOwnCanvas = data.hasOwnCanvas;
+      expect(annotation.mustBeViewedWhenEditing(false, null, true)).toEqual(
+        true
+      );
+      expect(data.hasOwnCanvas).toEqual(true);
+      expect(annotation.mustBeViewedWhenEditing(false)).toEqual(true);
+      expect(data.hasOwnCanvas).toEqual(hasOwnCanvas);
+    });
+
     it("should render an added FreeText annotation for printing", async function () {
       partialEvaluator.xref = new XRefMock();
       const task = new WorkerTask("test FreeText printing");
