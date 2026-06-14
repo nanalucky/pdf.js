@@ -4503,6 +4503,31 @@ describe("annotation", function () {
       expect(data.inkLists[0]).toEqual(Float32Array.from(inkList));
     });
 
+    it("should render in its own canvas when forms are rendered", async function () {
+      const inkDict = new Dict();
+      inkDict.set("Type", Name.get("Annot"));
+      inkDict.set("Subtype", Name.get("Ink"));
+      inkDict.set("InkList", [[1, 1, 1, 2, 2, 2, 3, 3]]);
+
+      const inkRef = Ref.get(142, 0);
+      const xref = new XRefMock([{ ref: inkRef, data: inkDict }]);
+      const annotation = await AnnotationFactory.create(
+        xref,
+        inkRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+
+      const { data } = annotation;
+      const hasOwnCanvas = data.hasOwnCanvas;
+      expect(annotation.mustBeViewedWhenEditing(false, null, true)).toEqual(
+        true
+      );
+      expect(data.hasOwnCanvas).toEqual(true);
+      expect(annotation.mustBeViewedWhenEditing(false)).toEqual(true);
+      expect(data.hasOwnCanvas).toEqual(hasOwnCanvas);
+    });
+
     it("should handle multiple ink lists", async function () {
       const inkDict = new Dict();
       inkDict.set("Type", Name.get("Annot"));
@@ -4835,6 +4860,32 @@ describe("annotation", function () {
       expect(data.quadPoints).toEqual(
         Float32Array.from([10, 20, 20, 20, 10, 10, 20, 10])
       );
+    });
+
+    it("should render in its own canvas when forms are rendered", async function () {
+      const highlightDict = new Dict();
+      highlightDict.set("Type", Name.get("Annot"));
+      highlightDict.set("Subtype", Name.get("Highlight"));
+      highlightDict.set("Rect", [10, 10, 20, 20]);
+      highlightDict.set("QuadPoints", [10, 20, 20, 20, 10, 10, 20, 10]);
+
+      const highlightRef = Ref.get(121, 0);
+      const xref = new XRefMock([{ ref: highlightRef, data: highlightDict }]);
+      const annotation = await AnnotationFactory.create(
+        xref,
+        highlightRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+
+      const { data } = annotation;
+      const hasOwnCanvas = data.hasOwnCanvas;
+      expect(annotation.mustBeViewedWhenEditing(false, null, true)).toEqual(
+        true
+      );
+      expect(data.hasOwnCanvas).toEqual(true);
+      expect(annotation.mustBeViewedWhenEditing(false)).toEqual(true);
+      expect(data.hasOwnCanvas).toEqual(hasOwnCanvas);
     });
 
     it("should set quadpoints to null when empty", async function () {

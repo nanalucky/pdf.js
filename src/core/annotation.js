@@ -4553,6 +4553,8 @@ class PolygonAnnotation extends PolylineAnnotation {}
 class CaretAnnotation extends MarkupAnnotation {}
 
 class InkAnnotation extends EditableAnnotation {
+  #savedHasOwnCanvas = null;
+
   constructor(params) {
     super(params);
 
@@ -4638,6 +4640,22 @@ class InkAnnotation extends EditableAnnotation {
         },
       });
     }
+  }
+
+  mustBeViewedWhenEditing(isEditing, modifiedIds = null, renderForms = false) {
+    if (isEditing || renderForms) {
+      if (!this.data.isEditable) {
+        return true;
+      }
+      this.#savedHasOwnCanvas ??= this.data.hasOwnCanvas;
+      this.data.hasOwnCanvas = true;
+      return true;
+    }
+    if (this.#savedHasOwnCanvas !== null) {
+      this.data.hasOwnCanvas = this.#savedHasOwnCanvas;
+      this.#savedHasOwnCanvas = null;
+    }
+    return !modifiedIds?.has(this.data.id);
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
@@ -4827,6 +4845,8 @@ class InkAnnotation extends EditableAnnotation {
 }
 
 class HighlightAnnotation extends EditableAnnotation {
+  #savedHasOwnCanvas = null;
+
   constructor(params) {
     super(params);
 
@@ -4872,6 +4892,22 @@ class HighlightAnnotation extends EditableAnnotation {
     } else {
       this.data.popupRef = null;
     }
+  }
+
+  mustBeViewedWhenEditing(isEditing, modifiedIds = null, renderForms = false) {
+    if (isEditing || renderForms) {
+      if (!this.data.isEditable) {
+        return true;
+      }
+      this.#savedHasOwnCanvas ??= this.data.hasOwnCanvas;
+      this.data.hasOwnCanvas = true;
+      return true;
+    }
+    if (this.#savedHasOwnCanvas !== null) {
+      this.data.hasOwnCanvas = this.#savedHasOwnCanvas;
+      this.#savedHasOwnCanvas = null;
+    }
+    return !modifiedIds?.has(this.data.id);
   }
 
   get overlaysTextContent() {
