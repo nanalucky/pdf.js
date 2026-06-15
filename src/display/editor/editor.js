@@ -2380,8 +2380,15 @@ class AnnotationEditor {
       // Avoid entering in edit mode when clicking on the comment button.
       return;
     }
+    const parent = this.parent;
+    if (!parent) {
+      return;
+    }
     this.enterInEditMode();
-    this.parent.updateToolbar({
+    if (this.parent !== parent) {
+      return;
+    }
+    parent.updateToolbar({
       mode: this.constructor._editorType,
       editId: this.uid,
     });

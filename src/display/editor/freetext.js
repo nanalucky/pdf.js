@@ -362,7 +362,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     // In case the blur callback hasn't been called.
     this.isEditing = false;
-    this.parent.div.classList.add("freetextEditing");
+    this.parent?.div.classList.add("freetextEditing");
 
     return true;
   }
