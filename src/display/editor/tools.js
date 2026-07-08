@@ -2033,7 +2033,11 @@ class AnnotationEditorUIManager {
         this.#mode === AnnotationEditorType.HIGHLIGHT &&
         details.hasSelectedEditor === false
       ) {
+        const highlightEditorType = this.#editorTypes?.find(
+          editorType => editorType._editorType === AnnotationEditorType.HIGHLIGHT
+        );
         this.#dispatchUpdateUI([
+          ...(highlightEditorType?.defaultPropertiesToUpdate ?? []),
           [AnnotationEditorParamsType.HIGHLIGHT_FREE, true],
         ]);
       }
