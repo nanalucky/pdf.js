@@ -1031,14 +1031,14 @@ class AnnotationEditorUIManager {
       evt => this.updateParams(evt.type, evt.value),
       evtOpts
     );
-    window.addEventListener(
+    this.#container.addEventListener(
       "pointerdown",
       () => {
         this.#isPointerDown = true;
       },
       { capture: true, signal }
     );
-    window.addEventListener(
+    this.#container.addEventListener(
       "pointerup",
       () => {
         this.#isPointerDown = false;
@@ -1585,7 +1585,7 @@ class AnnotationEditorUIManager {
 
     const anchorElement = this.#getAnchorElementForSelection(selection);
     const textLayer = anchorElement.closest(".textLayer");
-    if (!textLayer) {
+    if (!textLayer || !this.#container.contains(textLayer)) {
       if (this.#selectedTextNode) {
         this.#floatingToolbar?.hide();
         this.#selectedTextNode = null;
@@ -1726,10 +1726,8 @@ class AnnotationEditorUIManager {
     this.#keyboardManagerAC = new AbortController();
     const signal = this.combinedSignal(this.#keyboardManagerAC);
 
-    // The keyboard events are caught at the container level in order to be able
-    // to execute some callbacks even if the current page doesn't have focus.
-    window.addEventListener("keydown", this.keydown.bind(this), { signal });
-    window.addEventListener("keyup", this.keyup.bind(this), { signal });
+    this.#container.addEventListener("keydown", this.keydown.bind(this), { signal });
+    this.#container.addEventListener("keyup", this.keyup.bind(this), { signal });
   }
 
   #removeKeyboardManager() {
@@ -1744,9 +1742,9 @@ class AnnotationEditorUIManager {
     this.#copyPasteAC = new AbortController();
     const signal = this.combinedSignal(this.#copyPasteAC);
 
-    document.addEventListener("copy", this.copy.bind(this), { signal });
-    document.addEventListener("cut", this.cut.bind(this), { signal });
-    document.addEventListener("paste", this.paste.bind(this), { signal });
+    this.#container.addEventListener("copy", this.copy.bind(this), { signal });
+    this.#container.addEventListener("cut", this.cut.bind(this), { signal });
+    this.#container.addEventListener("paste", this.paste.bind(this), { signal });
   }
 
   #removeCopyPasteListeners() {
@@ -1756,8 +1754,8 @@ class AnnotationEditorUIManager {
 
   #addDragAndDropListeners() {
     const signal = this._signal;
-    document.addEventListener("dragover", this.dragOver.bind(this), { signal });
-    document.addEventListener("drop", this.drop.bind(this), { signal });
+    this.#container.addEventListener("dragover", this.dragOver.bind(this), { signal });
+    this.#container.addEventListener("drop", this.drop.bind(this), { signal });
   }
 
   addEditListeners() {
