@@ -943,10 +943,9 @@ class AnnotationEditorLayer {
     }
     this.#hadPointerDown = false;
 
-    if (
-      this.#currentEditorType?.isDrawer &&
-      this.#currentEditorType.supportMultipleDrawings
-    ) {
+    // Drawer editors are only created by the drawing session (each stroke
+    // commits on pointer up): a click must never create an empty one.
+    if (this.#currentEditorType?.isDrawer) {
       return;
     }
 

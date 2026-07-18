@@ -899,7 +899,7 @@ class AnnotationElement {
       annotationEditorType: mode,
       data: { id: editId },
     } = this;
-    this.container.addEventListener("dblclick", () => {
+    const enterEditMode = () => {
       if (this.parent?._annotationEditorUIManager?.annotationEditDisabled) {
         return;
       }
@@ -909,7 +909,11 @@ class AnnotationElement {
         editId,
         mustEnterInEditMode: true,
       });
-    });
+    };
+    this.container.addEventListener("dblclick", enterEditMode);
+    // A single click enters edit mode too (the gate above keeps it inert
+    // while the user is not annotating).
+    this.container.addEventListener("click", enterEditMode);
   }
 
   updateOC(optionalContentConfig) {

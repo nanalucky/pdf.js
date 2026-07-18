@@ -89,7 +89,9 @@ class InkEditor extends DrawingEditor {
 
   /** @inheritdoc */
   static get supportMultipleDrawings() {
-    return true;
+    // Each stroke is committed as its own annotation on pointer up: no
+    // multi-stroke session that would need an explicit "done" action.
+    return false;
   }
 
   /** @inheritdoc */

@@ -909,7 +909,9 @@ class DrawingEditor extends AnnotationEditor {
       return;
     }
 
-    this.endDrawing(/* isAborted = */ false);
+    // End the whole session (not just the drawing): the session state and
+    // its listeners must be cleaned up too, as the "done" action did.
+    this._currentParent?.endDrawingSession();
   }
 
   static endDrawing(isAborted) {
@@ -998,6 +1000,13 @@ class DrawingEditor extends AnnotationEditor {
     editor.rotate();
 
     return editor;
+  }
+
+  /** @inheritdoc */
+  isEmpty() {
+    // The outlines are attached after the base construction (or at the end
+    // of deserialization): without them there is nothing to serialize yet.
+    return !this.#drawOutlines;
   }
 
   serializeDraw(isForCopying) {

@@ -1548,6 +1548,11 @@ class AnnotationEditor {
       this.parent.toggleSelected(this);
     } else {
       this.parent.setSelected(this);
+      // A single click enters edit mode directly (what a double click used
+      // to do): the toolbar switches to the editor's type and editable
+      // content (freetext) becomes editable. dblclick() checks
+      // annotationEditDisabled so this stays inert while not annotating.
+      this.dblclick(event);
     }
   }
 

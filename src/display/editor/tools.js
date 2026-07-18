@@ -2346,10 +2346,11 @@ class AnnotationEditorUIManager {
       for (const editor of this.#selectedEditors) {
         editor.updateParams(type, value);
       }
-    } else {
-      for (const editorType of this.#editorTypes) {
-        editorType.updateDefaultParams(type, value);
-      }
+    }
+    // Also update the defaults when editing a selected editor, so the next
+    // created editor keeps the chosen style instead of reverting.
+    for (const editorType of this.#editorTypes) {
+      editorType.updateDefaultParams(type, value);
     }
   }
 
