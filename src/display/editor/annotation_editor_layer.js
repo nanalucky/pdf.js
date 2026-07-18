@@ -92,8 +92,6 @@ class AnnotationEditorLayer {
 
   #textLayerDblClickAC = null;
 
-  #lastPointerDownTimestamp = -1;
-
   #uiManager;
 
   static _initialized = false;
@@ -331,18 +329,9 @@ class AnnotationEditorLayer {
           if (this.#uiManager.annotationEditDisabled) {
             return;
           }
-          // It's the default value in Fenix:
-          // https://searchfox.org/mozilla-central/rev/beba5cde846f944c4d709e75cbe499d17af880a4/modules/libpref/init/StaticPrefList.yaml#19064
-          // and in Chrome and Windows:
-          // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/event_constants.h;drc=f0f5f3ceebb00da9363ccc7a1e2c0f17b6b383ba;l=115
-          const DBL_CLICK_THRESHOLD = 500;
-          const { clientX, clientY, timeStamp } = e;
-          const lastPointerDownTimestamp = this.#lastPointerDownTimestamp;
-          if (timeStamp - lastPointerDownTimestamp > DBL_CLICK_THRESHOLD) {
-            this.#lastPointerDownTimestamp = timeStamp;
-            return;
-          }
-          this.#lastPointerDownTimestamp = -1;
+          // A single click on an editor enters edit mode directly, like on
+          // the annotation elements (dblclick() re-checks the edit gates).
+          const { clientX, clientY } = e;
           const { classList } = this.div;
           classList.toggle("getElements", true);
           const elements = document.elementsFromPoint(clientX, clientY);
@@ -498,6 +487,13 @@ class AnnotationEditorLayer {
     });
     div.addEventListener("dblclick", e => {
       // In case the editor has been removed, the div will still be in the DOM
+      const _editor = this.#editors.get(e.target.dataset.editorId);
+      if (_editor) {
+        _editor.dblclick(e);
+      }
+    });
+    // A single click enters edit mode too (dblclick() checks the edit gates)
+    div.addEventListener("click", e => {
       const _editor = this.#editors.get(e.target.dataset.editorId);
       if (_editor) {
         _editor.dblclick(e);

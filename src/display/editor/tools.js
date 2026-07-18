@@ -1071,6 +1071,9 @@ class AnnotationEditorUIManager {
     this.#idManager = new IdManager(annotationEditorSecondPrefix);
     this.suppressEditorModifiedEvent = false;
     this.annotationEditDisabled = false;
+    // Optional predicate set by the embedder: editors (or annotation
+    // elements) for which it returns false cannot be selected or edited.
+    this.canEditEditor = null;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
@@ -1124,6 +1127,7 @@ class AnnotationEditorUIManager {
     this.#pdfDocument = null;
     this.suppressEditorModifiedEvent = false;
     this.annotationEditDisabled = false;
+    this.canEditEditor = null;
   }
 
   combinedSignal(ac) {
@@ -2570,6 +2574,9 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   toggleSelected(editor) {
+    if (this.canEditEditor?.(editor) === false) {
+      return;
+    }
     if (this.#selectedEditors.has(editor)) {
       this.#selectedEditors.delete(editor);
       editor.unselect();
@@ -2592,6 +2599,9 @@ class AnnotationEditorUIManager {
    */
   setSelected(editor) {
     if (this.annotationEditDisabled) {
+      return;
+    }
+    if (this.canEditEditor?.(editor) === false) {
       return;
     }
     this.updateToolbar({
@@ -2775,7 +2785,11 @@ class AnnotationEditorUIManager {
     for (const editor of this.#selectedEditors) {
       editor.commit();
     }
-    this.#selectEditors(this.#allEditors.values());
+    let editors = this.#allEditors.values();
+    if (this.canEditEditor) {
+      editors = [...editors].filter(this.canEditEditor);
+    }
+    this.#selectEditors(editors);
   }
 
   /**

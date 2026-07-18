@@ -185,6 +185,9 @@ class AnnotationEditor {
     this.annotationElementId = parameters.annotationElementId || null;
     this.creationDate = parameters.creationDate || new Date();
     this.modificationDate = parameters.modificationDate || null;
+    // Identity of the annotation creator (set by the embedder); null means
+    // the annotation belongs to the document owner.
+    this.ownerId = parameters.ownerId ?? null;
     this.canAddComment = true;
 
     const {
@@ -1979,6 +1982,7 @@ class AnnotationEditor {
       annotationElementId: data.annotationElementId || data.id,
       creationDate: data.creationDate,
       modificationDate: data.modificationDate,
+      ownerId: data.ownerId,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
@@ -2389,6 +2393,9 @@ class AnnotationEditor {
    */
   dblclick(event) {
     if (this._uiManager.annotationEditDisabled) {
+      return;
+    }
+    if (this._uiManager.canEditEditor?.(this) === false) {
       return;
     }
     if (event.target.nodeName === "BUTTON") {

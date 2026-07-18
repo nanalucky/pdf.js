@@ -900,7 +900,13 @@ class AnnotationElement {
       data: { id: editId },
     } = this;
     const enterEditMode = () => {
-      if (this.parent?._annotationEditorUIManager?.annotationEditDisabled) {
+      const uiManager = this.parent?._annotationEditorUIManager;
+      if (uiManager?.annotationEditDisabled) {
+        return;
+      }
+      // Annotations existing in the pdf have no ownerId: the predicate
+      // decides who may edit them (the document owner).
+      if (uiManager?.canEditEditor?.(this) === false) {
         return;
       }
       this.linkService.eventBus?.dispatch("switchannotationeditormode", {
@@ -947,6 +953,11 @@ class EditorAnnotationElement extends AnnotationElement {
   // this element on layer enable, so the creation time survives the cycle.
   get creationDate() {
     return this.editor.creationDate;
+  }
+
+  // Same as creationDate: keeps the annotation ownership across the cycle.
+  get ownerId() {
+    return this.editor.ownerId;
   }
 
   render() {
