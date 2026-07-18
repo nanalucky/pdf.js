@@ -280,21 +280,31 @@ class AnnotationEditorLayer {
 
     const annotationLayer = this.#annotationLayer;
     if (annotationLayer) {
-      for (const editable of annotationLayer.getEditableAnnotations()) {
-        // The element must be hidden whatever its state is.
-        editable.hide();
-        if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
-          continue;
+      // Re-creating editors from their annotation elements is not a user
+      // modification: suppress the modified events the editor constructors
+      // dispatch (the stamp editor checks the flag before scheduling its
+      // deferred dispatch too).
+      const wasSuppressed = this.#uiManager.suppressEditorModifiedEvent;
+      this.#uiManager.suppressEditorModifiedEvent = true;
+      try {
+        for (const editable of annotationLayer.getEditableAnnotations()) {
+          // The element must be hidden whatever its state is.
+          editable.hide();
+          if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
+            continue;
+          }
+          if (annotationElementIds.has(editable.data.id)) {
+            continue;
+          }
+          const editor = await this.deserialize(editable);
+          if (!editor) {
+            continue;
+          }
+          this.addOrRebuild(editor);
+          editor.enableEditing();
         }
-        if (annotationElementIds.has(editable.data.id)) {
-          continue;
-        }
-        const editor = await this.deserialize(editable);
-        if (!editor) {
-          continue;
-        }
-        this.addOrRebuild(editor);
-        editor.enableEditing();
+      } finally {
+        this.#uiManager.suppressEditorModifiedEvent = wasSuppressed;
       }
     }
     this.#isEnabling = false;
@@ -318,6 +328,9 @@ class AnnotationEditorLayer {
       this.#textLayer.div.addEventListener(
         "pointerdown",
         e => {
+          if (this.#uiManager.annotationEditDisabled) {
+            return;
+          }
           // It's the default value in Fenix:
           // https://searchfox.org/mozilla-central/rev/beba5cde846f944c4d709e75cbe499d17af880a4/modules/libpref/init/StaticPrefList.yaml#19064
           // and in Chrome and Windows:

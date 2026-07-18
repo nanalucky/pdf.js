@@ -842,12 +842,15 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize(isForCopying = false, context = null) {
-    if (this.isEmpty()) {
-      return null;
-    }
-
+    // The deleted check must come first: an editor for a stamp annotation
+    // existing in the pdf renders from the annotation's canvas and has no
+    // bitmap of its own, so isEmpty() is true and would hide the deletion.
     if (this.deleted) {
       return this.serializeDeleted();
+    }
+
+    if (this.isEmpty()) {
+      return null;
     }
 
     const serialized = Object.assign(super.serialize(isForCopying), {

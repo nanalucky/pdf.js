@@ -2068,7 +2068,14 @@ class AnnotationEditor {
     this.#touchManager = null;
     this.#fakeAnnotation?.remove();
     this.#fakeAnnotation = null;
-    this.dispatchModifiedEvent();
+    // Removing an unmodified editor linked to an existing annotation just
+    // hands rendering back to the annotation layer (when the layer is being
+    // disabled): nothing changes for the document, so no modified event.
+    // A real deletion of such an editor has been marked deleted in detach()
+    // by now, so it serializes to its deleted marker and is notified.
+    if (!this.annotationElementId || this.serialize() !== null) {
+      this.dispatchModifiedEvent();
+    }
   }
 
   /**
@@ -2376,6 +2383,9 @@ class AnnotationEditor {
    * @param {MouseEvent} event
    */
   dblclick(event) {
+    if (this._uiManager.annotationEditDisabled) {
+      return;
+    }
     if (event.target.nodeName === "BUTTON") {
       // Avoid entering in edit mode when clicking on the comment button.
       return;

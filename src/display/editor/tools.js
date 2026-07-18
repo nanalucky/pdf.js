@@ -1070,6 +1070,7 @@ class AnnotationEditorUIManager {
     commentManager?.setSidebarUiManager(this);
     this.#idManager = new IdManager(annotationEditorSecondPrefix);
     this.suppressEditorModifiedEvent = false;
+    this.annotationEditDisabled = false;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
@@ -1122,6 +1123,7 @@ class AnnotationEditorUIManager {
     this._editorUndoBar?.destroy();
     this.#pdfDocument = null;
     this.suppressEditorModifiedEvent = false;
+    this.annotationEditDisabled = false;
   }
 
   combinedSignal(ac) {
@@ -1235,6 +1237,17 @@ class AnnotationEditorUIManager {
       this.disableUserSelect(false);
     }
     this.#currentDrawingSession = layer;
+  }
+
+  /**
+   * Abort the current drawing session and discard its strokes instead of
+   * committing them (e.g. when the annotate permission is revoked mid-draw).
+   */
+  abortDrawingSession() {
+    const editor = this.#currentDrawingSession?.endDrawingSession(
+      /* isAborted = */ true
+    );
+    editor?.remove();
   }
 
   setMainHighlightColorPicker(colorPicker) {
@@ -1438,6 +1451,9 @@ class AnnotationEditorUIManager {
   }
 
   highlightSelection(methodOfCreation = "", comment = false) {
+    if (this.annotationEditDisabled) {
+      return;
+    }
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
       return;
@@ -1649,6 +1665,9 @@ class AnnotationEditorUIManager {
   }
 
   #onSelectEnd(methodOfCreation = "") {
+    if (this.annotationEditDisabled) {
+      return;
+    }
     if (this.#mode === AnnotationEditorType.HIGHLIGHT) {
       this.highlightSelection(methodOfCreation);
     } else if (this.#enableHighlightFloatingButton) {
@@ -2170,6 +2189,9 @@ class AnnotationEditorUIManager {
     if (mode === AnnotationEditorType.NONE) {
       this.setEditingState(false);
       this.#disableAll();
+      // Clear any remaining selection so no editor keeps its selection
+      // border after leaving edit mode
+      this.unselectAll();
       for (const editor of this.#allEditors.values()) {
         editor.hideStandaloneCommentButton();
       }
@@ -2274,6 +2296,14 @@ class AnnotationEditorUIManager {
    */
   updateToolbar(options) {
     if (options.mode === this.#mode) {
+      return;
+    }
+    // Never switch back into an editing mode while editing is disabled
+    // (e.g. an editor grabbing focus or committing during the NONE switch)
+    if (
+      this.annotationEditDisabled &&
+      options.mode !== AnnotationEditorType.NONE
+    ) {
       return;
     }
     this._eventBus.dispatch("switchannotationeditormode", {
@@ -2560,6 +2590,9 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   setSelected(editor) {
+    if (this.annotationEditDisabled) {
+      return;
+    }
     this.updateToolbar({
       mode: editor.mode,
       editId: editor.uid,

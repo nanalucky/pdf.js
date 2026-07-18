@@ -900,6 +900,9 @@ class AnnotationElement {
       data: { id: editId },
     } = this;
     this.container.addEventListener("dblclick", () => {
+      if (this.parent?._annotationEditorUIManager?.annotationEditDisabled) {
+        return;
+      }
       this.linkService.eventBus?.dispatch("switchannotationeditormode", {
         source: this,
         mode,
@@ -934,6 +937,12 @@ class EditorAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     super(parameters, { isRenderable: true, ignoreBorder: true });
     this.editor = parameters.editor;
+  }
+
+  // Read by AnnotationEditor.deserialize when the editor is re-created from
+  // this element on layer enable, so the creation time survives the cycle.
+  get creationDate() {
+    return this.editor.creationDate;
   }
 
   render() {
