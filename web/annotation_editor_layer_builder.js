@@ -108,7 +108,18 @@ class AnnotationEditorLayerBuilder {
     const clonedViewport = viewport.clone({ dontFlip: true });
     if (this.div) {
       this.annotationEditorLayer.update({ viewport: clonedViewport });
-      await this.#uiManager.addLayer(this.annotationEditorLayer);
+      // Re-running addLayer (and its enable()/disable()) is only needed to
+      // re-apply the editor-vs-annotation-element visibility state after the
+      // annotation layer was re-rendered, or to re-register the layer.
+      // Running it unconditionally made every zoom tick pay a full
+      // enable() per page, which visibly janked pinch zoom on mobile.
+      if (
+        this.annotationEditorLayer.annotationLayerResyncNeeded ||
+        this.#uiManager.getLayer(this.annotationEditorLayer.pageIndex) !==
+          this.annotationEditorLayer
+      ) {
+        await this.#uiManager.addLayer(this.annotationEditorLayer);
+      }
       this.show();
       return;
     }

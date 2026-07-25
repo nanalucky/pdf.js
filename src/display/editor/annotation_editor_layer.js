@@ -71,6 +71,8 @@ class AnnotationEditorLayer {
 
   #annotationLayer = null;
 
+  #annotationLayerResync = false;
+
   #clickAC = null;
 
   #clickListeners = null;
@@ -263,6 +265,7 @@ class AnnotationEditorLayer {
    * editor creation.
    */
   async enable() {
+    this.#annotationLayerResync = false;
     this.#isEnabling = true;
     this.div.tabIndex = 0;
     // In highlight mode the layer must stay click-through (updateMode sets it
@@ -327,6 +330,7 @@ class AnnotationEditorLayer {
    * Disable editor creation.
    */
   async disable() {
+    this.#annotationLayerResync = false;
     this.#isDisabling = true;
     this.div.tabIndex = -1;
     this.togglePointerEvents(false);
@@ -1233,7 +1237,18 @@ class AnnotationEditorLayer {
   }
 
   updateAnnotationLayer(annotationLayer) {
+    if (this.#annotationLayer === annotationLayer) {
+      return;
+    }
     this.#annotationLayer = annotationLayer;
+    // A new annotation layer means freshly rendered annotation elements:
+    // enable()/disable() must run again to re-apply the editor-vs-element
+    // visibility state (see the builder's render()).
+    this.#annotationLayerResync = true;
+  }
+
+  get annotationLayerResyncNeeded() {
+    return this.#annotationLayerResync;
   }
 
   /**
