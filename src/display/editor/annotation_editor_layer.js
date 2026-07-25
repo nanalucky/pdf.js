@@ -34,6 +34,7 @@ import { setLayerDimensions, stopEvent } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";
+import { HighlighterEditor } from "./highlighter.js";
 import { InkEditor } from "./ink.js";
 import { SignatureEditor } from "./signature.js";
 import { StampEditor } from "./stamp.js";
@@ -72,6 +73,8 @@ class AnnotationEditorLayer {
 
   #clickAC = null;
 
+  #clickListeners = null;
+
   #editorFocusTimeoutId = null;
 
   #editors = new Map();
@@ -100,6 +103,7 @@ class AnnotationEditorLayer {
     [
       FreeTextEditor,
       InkEditor,
+      HighlighterEditor,
       StampEditor,
       HighlightEditor,
       SignatureEditor,
@@ -261,7 +265,14 @@ class AnnotationEditorLayer {
   async enable() {
     this.#isEnabling = true;
     this.div.tabIndex = 0;
-    this.togglePointerEvents(true);
+    // In highlight mode the layer must stay click-through (updateMode sets it
+    // so) — but a zoom/rotation re-render re-adds the kept layer through
+    // uiManager.addLayer -> enable() WITHOUT a later updateMode(), and
+    // unconditionally enabling pointer events here left the layer swallowing
+    // every pointer event, killing highlighting until the next mode switch.
+    this.togglePointerEvents(
+      this.#uiManager.getMode() !== AnnotationEditorType.HIGHLIGHT
+    );
     this.div.classList.toggle("nonEditing", false);
     this.#removeAllEditorsBorder();
     this.#textLayerDblClickAC?.abort();
@@ -351,7 +362,16 @@ class AnnotationEditorLayer {
             return;
           }
           const editor = this.#editors.get(id);
-          if (editor?.annotationElementId === null) {
+          if (
+            editor &&
+            // In-session editors, plus prebaked drawn annotations which are
+            // shown through their editors even while editing is off (see
+            // below); dblclick() re-checks the edit gates either way.
+            (editor.annotationElementId === null ||
+              editor.editorType === "highlight" ||
+              editor.editorType === "highlighter" ||
+              editor.editorType === "ink")
+          ) {
             stopEvent(e);
             editor.dblclick(e);
           }
@@ -362,6 +382,7 @@ class AnnotationEditorLayer {
 
     const annotationLayer = this.#annotationLayer;
     const needFakeAnnotation = [];
+    const keptHighlightIds = new Set();
     if (annotationLayer) {
       const changedAnnotations = new Map();
       const resetAnnotations = new Map();
@@ -369,6 +390,24 @@ class AnnotationEditorLayer {
         editor.disableEditing();
         if (!editor.annotationElementId) {
           needFakeAnnotation.push(editor);
+          continue;
+        }
+        // Prebaked drawn annotations (ink, highlighter, highlight) keep their
+        // editor rendering even while editing is off, so — like upstream —
+        // their visuals always live in the canvasWrapper. For the multiply
+        // ones this is required: editable annotations never reach the page
+        // canvas, and the annotation-layer fallback draws into an isolated
+        // canvas where the multiply blend is lost (an opaque band covering
+        // the text). For ink it keeps a single rendering home.
+        if (
+          editor.editorType === "highlight" ||
+          editor.editorType === "highlighter" ||
+          editor.editorType === "ink"
+        ) {
+          if (editor.serialize() !== null) {
+            this.#uiManager.addChangedExistingAnnotation(editor);
+          }
+          keptHighlightIds.add(editor.annotationElementId);
           continue;
         }
         if (editor.serialize() !== null) {
@@ -386,6 +425,10 @@ class AnnotationEditorLayer {
         const { id } = editable.data;
         if (this.#uiManager.isDeletedAnnotationElement(id)) {
           editable.updateEdited({ deleted: true });
+          continue;
+        }
+        if (keptHighlightIds.has(id)) {
+          editable.hide();
           continue;
         }
         let editor = resetAnnotations.get(id);
@@ -406,6 +449,10 @@ class AnnotationEditorLayer {
         }
         editable.show();
       }
+
+      // Build editors for the prebaked drawn annotations that don't have
+      // one yet — same routine enable() runs for every editable annotation.
+      await this.#convertDrawnEditables(annotationLayer);
     }
 
     this.#cleanup();
@@ -422,6 +469,44 @@ class AnnotationEditorLayer {
     this.#addAllEditorsBorder();
 
     this.#isDisabling = false;
+  }
+
+  async #convertDrawnEditables(annotationLayer) {
+    const existingIds = new Set();
+    for (const editor of this.#allEditorsIterator) {
+      if (editor.annotationElementId) {
+        existingIds.add(editor.annotationElementId);
+      }
+    }
+    const wasSuppressed = this.#uiManager.suppressEditorModifiedEvent;
+    this.#uiManager.suppressEditorModifiedEvent = true;
+    try {
+      for (const editable of annotationLayer.getEditableAnnotations()) {
+        if (
+          editable.annotationEditorType !== AnnotationEditorType.HIGHLIGHT &&
+          editable.annotationEditorType !== AnnotationEditorType.HIGHLIGHTER &&
+          editable.annotationEditorType !== AnnotationEditorType.INK
+        ) {
+          continue;
+        }
+        const { id } = editable.data;
+        if (
+          existingIds.has(id) ||
+          this.#uiManager.isDeletedAnnotationElement(id)
+        ) {
+          continue;
+        }
+        editable.hide();
+        const editor = await this.deserialize(editable);
+        if (!editor) {
+          continue;
+        }
+        this.addOrRebuild(editor);
+        editor.disableEditing();
+      }
+    } finally {
+      this.#uiManager.suppressEditorModifiedEvent = wasSuppressed;
+    }
   }
 
   addEditorBorder(editor) {
@@ -604,19 +689,38 @@ class AnnotationEditorLayer {
       return;
     }
     this.#clickAC = new AbortController();
-    const signal = this.#uiManager.combinedSignal(this.#clickAC);
 
-    this.div.addEventListener("pointerdown", this.pointerdown.bind(this), {
-      signal,
-    });
-    const pointerup = this.pointerup.bind(this);
-    this.div.addEventListener("pointerup", pointerup, { signal });
-    this.div.addEventListener("pointercancel", pointerup, { signal });
+    // Deliberately NOT bound with an abort signal: WebKit drops DOM
+    // listeners registered with an AbortSignal.any() composite once GC
+    // collects its bookkeeping (observed on iOS after pinch-zoom re-render
+    // churn, even with the signal itself strongly retained). Plain
+    // listeners are spec-guaranteed to stay; disableClick() removes them
+    // explicitly.
+    this.#clickListeners = {
+      pointerdown: this.pointerdown.bind(this),
+      pointerup: this.pointerup.bind(this),
+      pointercancel: () => {
+        // pointercancel events have button === -1, so routing them through
+        // pointerup() returns at the button gate without resetting the flag —
+        // and a stuck flag makes pointerdown() swallow the next interaction
+        // (frequent on iOS, where the browser cancels touches liberally).
+        this.#hadPointerDown = false;
+      },
+    };
+    for (const [type, listener] of Object.entries(this.#clickListeners)) {
+      this.div.addEventListener(type, listener);
+    }
   }
 
   disableClick() {
     this.#clickAC?.abort();
     this.#clickAC = null;
+    if (this.#clickListeners) {
+      for (const [type, listener] of Object.entries(this.#clickListeners)) {
+        this.div?.removeEventListener(type, listener);
+      }
+      this.#clickListeners = null;
+    }
   }
 
   attach(editor) {
@@ -828,9 +932,14 @@ class AnnotationEditorLayer {
    * @returns {Promise<AnnotationEditor | null>}
    */
   async deserialize(data, editorId) {
+    // Highlighter strokes serialize as Ink annotations (PDF-writer interop)
+    // with a flag that routes them back to the highlighter editor here
+    const type = data.highlighter
+      ? AnnotationEditorType.HIGHLIGHTER
+      : (data.annotationType ?? data.annotationEditorType);
     return (
       (await AnnotationEditorLayer.#editorTypes
-        .get(data.annotationType ?? data.annotationEditorType)
+        .get(type)
         ?.deserialize(data, this, this.#uiManager, editorId)) || null
     );
   }
@@ -1088,6 +1197,7 @@ class AnnotationEditorLayer {
    * Destroy the main editor.
    */
   destroy() {
+    this.disableClick();
     this.commitOrRemove();
     if (this.#uiManager.getActive()?.parent === this) {
       // We need to commit the current editor before destroying the layer.

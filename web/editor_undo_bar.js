@@ -37,6 +37,8 @@ class EditorUndoBar {
 
   static #l10nMessages = Object.freeze({
     highlight: "pdfjs-editor-undo-bar-message-highlight",
+    // The highlighter reuses the highlight strings: same thing to the user
+    highlighter: "pdfjs-editor-undo-bar-message-highlight",
     freetext: "pdfjs-editor-undo-bar-message-freetext",
     stamp: "pdfjs-editor-undo-bar-message-stamp",
     ink: "pdfjs-editor-undo-bar-message-ink",

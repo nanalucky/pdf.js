@@ -258,6 +258,8 @@ class AnnotationEditor {
 
     AnnotationEditor._l10nAlert ??= Object.freeze({
       highlight: "pdfjs-editor-highlight-added-alert",
+      // The highlighter reuses the highlight strings: same thing to the user
+      highlighter: "pdfjs-editor-highlight-added-alert",
       freetext: "pdfjs-editor-freetext-added-alert",
       ink: "pdfjs-editor-ink-added-alert",
       stamp: "pdfjs-editor-stamp-added-alert",

@@ -51,6 +51,14 @@
   --new-alt-text-warning-image: url(images/altText_warning.svg);
 }
 
+/* A 6px corner handle cannot be grabbed with a finger */
+@media (any-pointer: coarse) {
+  :root {
+    --resizer-size: 16px;
+  }
+}
+
+
 .textLayer {
   &.highlighting {
     cursor: var(--editorFreeHighlight-editing-cursor);
@@ -120,6 +128,21 @@
   transform-origin: 0 0;
   cursor: auto;
 
+  /* While a gesture-driven editing mode is active, editing wins over native
+     panning. The JS guards (non-passive touchmove + preventDefault) are not
+     enough on iOS: Safari decides scroll-vs-page at touchstart from CSS and
+     from listeners registered BEFORE the gesture, so guards attached inside
+     pointerdown handlers lose the current gesture. */
+  &:is(
+      .inkEditing,
+      .highlighterEditing,
+      .freetextEditing,
+      .stampEditing,
+      .signatureEditing
+    ) {
+    touch-action: none;
+  }
+
   .selectedEditor {
     z-index: 100000 !important;
   }
@@ -168,8 +191,31 @@
   cursor: var(--editorInk-editing-cursor);
 }
 
+.annotationEditorLayer.highlighterEditing {
+  cursor: var(--editorFreeHighlight-editing-cursor);
+}
+
 .annotationEditorLayer .draw {
   box-sizing: border-box;
+}
+
+/* Touch: dragging an editor or one of its resize handles must never pan the
+   page (same iOS touchstart-time decision as above; freetext/ink already set
+   this on inner elements, this covers the editor shells, highlight and the
+   resizers uniformly). */
+.annotationEditorLayer
+  :is(
+    .freeTextEditor,
+    .inkEditor,
+    .stampEditor,
+    .signatureEditor,
+    .highlightEditor
+  ) {
+  touch-action: none;
+}
+
+.annotationEditorLayer .resizer {
+  touch-action: none;
 }
 
 .annotationEditorLayer

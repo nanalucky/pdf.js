@@ -3497,7 +3497,7 @@ class InkAnnotationElement extends AnnotationElement {
 
     this.annotationEditorType =
       this.data.it === "InkHighlight"
-        ? AnnotationEditorType.HIGHLIGHT
+        ? AnnotationEditorType.HIGHLIGHTER
         : AnnotationEditorType.INK;
   }
 

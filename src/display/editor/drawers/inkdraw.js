@@ -18,6 +18,10 @@ import { MathClamp } from "../../../shared/math_clamp.js";
 import { Outline } from "./outline.js";
 
 class InkDrawOutliner {
+  // Highlighter strokes render with the draw layer's multiply-blended
+  // "highlight" root class (set by the HighlighterEditor drawer factory).
+  isHighlighter = false;
+
   // The last 3 points of the line.
   #last = new Float64Array(6);
 
@@ -264,6 +268,7 @@ class InkDrawOutliner {
     this.#lines = null;
     this.#lastSVGPath = null;
 
+    this.#outlines.isHighlighter = this.isHighlighter;
     return this.#outlines;
   }
 
@@ -274,6 +279,7 @@ class InkDrawOutliner {
       },
       rootClass: {
         draw: true,
+        highlight: this.isHighlighter,
       },
       bbox: [0, 0, 1, 1],
     };
@@ -281,6 +287,9 @@ class InkDrawOutliner {
 }
 
 class InkDrawOutline extends Outline {
+  // See InkDrawOutliner.isHighlighter (set on commit and on deserialize)
+  isHighlighter = false;
+
   #bbox;
 
   #currentRotation = 0;
@@ -879,6 +888,7 @@ class InkDrawOutline extends Outline {
       },
       rootClass: {
         draw: true,
+        highlight: this.isHighlighter,
       },
       path: {
         d: this.toSVGPath(),

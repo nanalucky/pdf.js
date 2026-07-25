@@ -82,6 +82,9 @@ const AnnotationEditorType = {
   STAMP: 13,
   INK: 15,
   POPUP: 16,
+  // Ink-pipeline editor styled as a free highlight (multiply blend);
+  // replaces textLayer-driven highlight creation for stroke drawing.
+  HIGHLIGHTER: 17,
   SIGNATURE: 101,
   COMMENT: 102,
 };
@@ -101,6 +104,11 @@ const AnnotationEditorParamsType = {
   HIGHLIGHT_FREE: 33,
   HIGHLIGHT_SHOW_ALL: 34,
   DRAW_STEP: 41,
+  // Distinct from INK_* on purpose: default-param updates broadcast to every
+  // registered editor type, and the highlighter presets must not follow the
+  // ink tool's color/thickness (nor vice versa).
+  HIGHLIGHTER_COLOR: 51,
+  HIGHLIGHTER_THICKNESS: 52,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.

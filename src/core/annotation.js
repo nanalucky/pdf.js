@@ -4702,8 +4702,8 @@ class InkAnnotation extends EditableAnnotation {
     ink.setIfNumber("Rotate", rotation);
     ink.setIfDefined("T", stringToAsciiOrUTF16BE(user));
 
-    if (outlines) {
-      // Free highlight.
+    if (outlines || annotation.highlighter) {
+      // Free highlight (outline-based) or a highlighter stroke.
       // There's nothing about this in the spec, but it's used when highlighting
       // in Edge's viewer. Acrobat takes into account this parameter to indicate
       // that the Ink is used for highlighting.
@@ -4750,7 +4750,9 @@ class InkAnnotation extends EditableAnnotation {
       `${getPdfColor(color, /* isFill */ false)}`,
     ];
 
-    if (opacity !== 1) {
+    // A highlighter stroke multiplies with the page (like a free highlight),
+    // so it needs the ExtGState even at full opacity.
+    if (opacity !== 1 || annotation.highlighter) {
       appearanceBuffer.push("/R0 gs");
     }
 
@@ -4789,11 +4791,16 @@ class InkAnnotation extends EditableAnnotation {
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
 
-    if (opacity !== 1) {
+    if (opacity !== 1 || annotation.highlighter) {
       const resources = new Dict(xref);
       const extGState = new Dict(xref);
       const r0 = new Dict(xref);
-      r0.set("CA", opacity);
+      if (opacity !== 1) {
+        r0.set("CA", opacity);
+      }
+      if (annotation.highlighter) {
+        r0.setIfName("BM", "Multiply");
+      }
       r0.setIfName("Type", "ExtGState");
       extGState.set("R0", r0);
       resources.set("ExtGState", extGState);

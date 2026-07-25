@@ -40,6 +40,8 @@ class EditorToolbar {
     EditorToolbar.#l10nRemove ||= Object.freeze({
       freetext: "pdfjs-editor-remove-freetext-button",
       highlight: "pdfjs-editor-remove-highlight-button",
+      // The highlighter reuses the highlight strings: same thing to the user
+      highlighter: "pdfjs-editor-remove-highlight-button",
       ink: "pdfjs-editor-remove-ink-button",
       stamp: "pdfjs-editor-remove-stamp-button",
       signature: "pdfjs-editor-remove-signature-button",
