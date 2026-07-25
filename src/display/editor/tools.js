@@ -817,6 +817,9 @@ class AnnotationEditorUIManager {
 
   #mode = AnnotationEditorType.NONE;
 
+  // Safari GC workaround, see combinedSignal().
+  #retainedSignals = new Set();
+
   #selectedEditors = new Set();
 
   #selectedTextNode = null;
@@ -1131,7 +1134,18 @@ class AnnotationEditorUIManager {
   }
 
   combinedSignal(ac) {
-    return AbortSignal.any([this._signal, ac.signal]);
+    const signal = AbortSignal.any([this._signal, ac.signal]);
+    // Safari/WebKit holds AbortSignal.any() composites weakly: once GC'd
+    // (e.g. after the re-render churn of a pinch zoom on iOS), every event
+    // listener bound with the signal is silently dropped. Retain the signal
+    // until it aborts so those listeners survive.
+    this.#retainedSignals.add(signal);
+    signal.addEventListener(
+      "abort",
+      () => this.#retainedSignals.delete(signal),
+      { once: true }
+    );
+    return signal;
   }
 
   get mlManager() {
