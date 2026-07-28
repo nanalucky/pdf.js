@@ -277,7 +277,9 @@ class Comment {
   }
 
   isEmpty() {
-    return this.#text === null;
+    // Whitespace-only text is as good as no comment: it must not produce
+    // a comment button that opens an empty popup.
+    return this.#text === null || (!this.#richText && this.#text.trim() === "");
   }
 
   hasBeenEdited() {

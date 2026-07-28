@@ -1232,6 +1232,13 @@ class AnnotationEditor {
       return;
     }
     this.#commentStandaloneButton = this.#comment.renderForStandalone();
+    if (!this._uiManager.isEditingMode()) {
+      // Outside editing modes the annotation layer shows its own comment
+      // button for this annotation; rendering the editor's one too (e.g.
+      // for prebaked annotations converted to editors at load) would
+      // duplicate the bubble.
+      this.#commentStandaloneButton.classList.add("hidden");
+    }
     this.div.append(this.#commentStandaloneButton);
   }
 
@@ -1338,7 +1345,10 @@ class AnnotationEditor {
       const trX = blX + DEFAULT_POPUP_WIDTH;
       serialized.popup = {
         contents: this.comment.text,
-        deleted: this.comment.deleted,
+        // An empty comment must delete any existing Popup instead of
+        // saving an empty one: an empty /Popup in the file renders a
+        // comment bubble that opens a blank box on the next load.
+        deleted: this.comment.deleted || this.#comment.isEmpty(),
         rect: [blX, blY, trX, trY],
       };
     }

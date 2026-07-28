@@ -2656,6 +2656,13 @@ class PopupElement {
       return;
     }
 
+    if (!this.comment) {
+      // No comment text (e.g. an empty /Popup written by older builds for
+      // comment-less strokes): a button would only open a blank comment
+      // box. updateEdited() re-runs this when a comment is added later.
+      return;
+    }
+
     if (!this.#commentButtonPosition) {
       this.#setCommentButtonPosition();
     }
