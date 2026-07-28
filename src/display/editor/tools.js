@@ -817,6 +817,10 @@ class AnnotationEditorUIManager {
 
   #mode = AnnotationEditorType.NONE;
 
+  // Eraser hit diameter in CSS pixels (no editor class behind the eraser
+  // mode, so the value lives here instead of in DrawingOptions).
+  #eraserSize = 24;
+
   // Safari GC workaround, see combinedSignal().
   #retainedSignals = new Set();
 
@@ -2344,6 +2348,9 @@ class AnnotationEditorUIManager {
       case AnnotationEditorParamsType.CREATE:
         this.currentLayer.addNewEditor(value);
         return;
+      case AnnotationEditorParamsType.ERASER_SIZE:
+        this.#eraserSize = value;
+        return;
       case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
         this._eventBus.dispatch("reporttelemetry", {
           source: this,
@@ -2584,11 +2591,36 @@ class AnnotationEditorUIManager {
   }
 
   /**
+   * Mode-filtered selection policy: ink and highlighter strokes are
+   * draw-only (erase and redraw instead of select/move/edit), and every
+   * other editor type is only selectable while its own editing mode is
+   * active. Keeps a stroke started on top of an existing editor from
+   * selecting it and hijacking the toolbar mode, and keeps stroke
+   * selection borders out of meetings.
+   * @param {AnnotationEditor} editor
+   * @returns {boolean}
+   */
+  isSelectableInCurrentMode(editor) {
+    const type = editor.constructor._editorType;
+    if (
+      type === AnnotationEditorType.INK ||
+      type === AnnotationEditorType.HIGHLIGHTER
+    ) {
+      return false;
+    }
+    // Comment mode operates across editor types.
+    return this.#mode === AnnotationEditorType.POPUP || this.#mode === type;
+  }
+
+  /**
    * Add or remove an editor the current selection.
    * @param {AnnotationEditor} editor
    */
   toggleSelected(editor) {
-    if (this.canEditEditor?.(editor) === false) {
+    if (
+      this.canEditEditor?.(editor) === false ||
+      !this.isSelectableInCurrentMode(editor)
+    ) {
       return;
     }
     if (this.#selectedEditors.has(editor)) {
@@ -2615,7 +2647,10 @@ class AnnotationEditorUIManager {
     if (this.annotationEditDisabled) {
       return;
     }
-    if (this.canEditEditor?.(editor) === false) {
+    if (
+      this.canEditEditor?.(editor) === false ||
+      !this.isSelectableInCurrentMode(editor)
+    ) {
       return;
     }
     this.updateToolbar({
@@ -2764,6 +2799,33 @@ class AnnotationEditorUIManager {
     this.addCommands({ cmd, undo, mustExec: true });
   }
 
+  get eraserSize() {
+    return this.#eraserSize;
+  }
+
+  /**
+   * Register one eraser gesture as a single undoable command. The layer
+   * removes editors eagerly while the pointer moves (immediate feedback),
+   * so the command must not re-execute on registration.
+   * @param {Array<AnnotationEditor>} editors
+   */
+  eraseEditors(editors) {
+    if (editors.length === 0) {
+      return;
+    }
+    const cmd = () => {
+      for (const editor of editors) {
+        editor.remove();
+      }
+    };
+    const undo = () => {
+      for (const editor of editors) {
+        this.#addEditorToLayer(editor);
+      }
+    };
+    this.addCommands({ cmd, undo, mustExec: false });
+  }
+
   commitOrRemove() {
     // An editor is being edited so just commit it.
     this.#activeEditor?.commitOrRemove();
@@ -2799,9 +2861,11 @@ class AnnotationEditorUIManager {
     for (const editor of this.#selectedEditors) {
       editor.commit();
     }
-    let editors = this.#allEditors.values();
+    let editors = [...this.#allEditors.values()].filter(editor =>
+      this.isSelectableInCurrentMode(editor)
+    );
     if (this.canEditEditor) {
-      editors = [...editors].filter(this.canEditEditor);
+      editors = editors.filter(this.canEditEditor);
     }
     this.#selectEditors(editors);
   }

@@ -811,6 +811,10 @@ class DrawLayer {
     }
   }
 
+  getSVGRoot(id) {
+    return this.#mapping.get(id) || null;
+  }
+
   updateParent(id, layer) {
     if (layer === this) {
       return;

@@ -404,7 +404,12 @@ class FreeTextEditor extends AnnotationEditor {
     this.isEditing = false;
     if (this.parent) {
       this.parent.setEditingState(true);
-      this.parent.div.classList.add("freetextEditing");
+      // Only while the freetext tool is active: the eraser can remove this
+      // editor from another mode, and re-adding the class there would give
+      // the layer a stale freetext cursor.
+      if (this._uiManager.getMode() === AnnotationEditorType.FREETEXT) {
+        this.parent.div.classList.add("freetextEditing");
+      }
     }
     super.remove();
   }

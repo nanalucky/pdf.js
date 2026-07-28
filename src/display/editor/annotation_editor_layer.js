@@ -36,6 +36,7 @@ import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";
 import { HighlighterEditor } from "./highlighter.js";
 import { InkEditor } from "./ink.js";
+import { MathClamp } from "../../shared/math_clamp.js";
 import { SignatureEditor } from "./signature.js";
 import { StampEditor } from "./stamp.js";
 
@@ -80,6 +81,10 @@ class AnnotationEditorLayer {
   #editorFocusTimeoutId = null;
 
   #editors = new Map();
+
+  #eraserListeners = null;
+
+  #eraserGesture = null;
 
   #hadPointerDown = false;
 
@@ -173,9 +178,11 @@ class AnnotationEditorLayer {
    */
   updateMode(mode = this.#uiManager.getMode()) {
     this.#cleanup();
+    this.disableEraser();
     switch (mode) {
       case AnnotationEditorType.NONE:
         this.div.classList.toggle("nonEditing", true);
+        this.div.classList.toggle("eraserEditing", false);
         this.disableTextSelection();
         this.togglePointerEvents(false);
         this.toggleAnnotationLayerPointerEvents(true);
@@ -191,6 +198,12 @@ class AnnotationEditorLayer {
         this.togglePointerEvents(false);
         this.disableClick();
         break;
+      case AnnotationEditorType.ERASER:
+        this.disableTextSelection();
+        this.togglePointerEvents(true);
+        this.disableClick();
+        this.enableEraser();
+        break;
       default:
         this.disableTextSelection();
         this.togglePointerEvents(true);
@@ -200,6 +213,9 @@ class AnnotationEditorLayer {
     this.toggleAnnotationLayerPointerEvents(false);
     const { classList } = this.div;
     classList.toggle("nonEditing", false);
+    // No editor class behind the eraser, so the #editorTypes loop below
+    // can't manage its mode class.
+    classList.toggle("eraserEditing", mode === AnnotationEditorType.ERASER);
     if (mode === AnnotationEditorType.POPUP) {
       classList.toggle("commentEditing", true);
     } else {
@@ -467,6 +483,8 @@ class AnnotationEditorLayer {
     for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
       classList.remove(`${editorType._type}Editing`);
     }
+    classList.remove("eraserEditing");
+    this.disableEraser();
     this.disableTextSelection();
     this.toggleAnnotationLayerPointerEvents(true);
     annotationLayer?.updateFakeAnnotations(needFakeAnnotation);
@@ -725,6 +743,274 @@ class AnnotationEditorLayer {
       }
       this.#clickListeners = null;
     }
+  }
+
+  enableEraser() {
+    if (this.#eraserListeners) {
+      return;
+    }
+    // Same plain-binding rule as enableClick(): listeners registered with
+    // an AbortSignal.any() composite are dropped by WebKit GC, so bind
+    // plainly and remove explicitly in disableEraser().
+    this.#eraserListeners = {
+      pointerdown: this.#eraserPointerdown.bind(this),
+    };
+    this.div.addEventListener("pointerdown", this.#eraserListeners.pointerdown);
+  }
+
+  disableEraser() {
+    this.#endEraserGesture();
+    if (!this.#eraserListeners) {
+      return;
+    }
+    this.div?.removeEventListener(
+      "pointerdown",
+      this.#eraserListeners.pointerdown
+    );
+    this.#eraserListeners = null;
+  }
+
+  #eraserPointerdown(event) {
+    if (this.#eraserGesture) {
+      // A second pointer starts a pinch: settle what was erased so far and
+      // let the TouchManager own the rest of the gesture.
+      this.#endEraserGesture();
+      return;
+    }
+    if (event.button !== 0) {
+      return;
+    }
+    const radius =
+      (this.#uiManager.eraserSize / 2) *
+      (event.pointerType === "touch" ? 1.5 : 1);
+    const gesture = (this.#eraserGesture = {
+      pointerId: event.pointerId,
+      radius,
+      erased: [],
+      erasedSet: new Set(),
+      geometries: new Map(),
+      lastX: event.clientX,
+      lastY: event.clientY,
+      listeners: null,
+    });
+    const onMove = ev => {
+      if (ev.pointerId === gesture.pointerId) {
+        this.#eraseAlong(gesture, ev.clientX, ev.clientY);
+      }
+    };
+    const onEnd = ev => {
+      if (ev.pointerId === gesture.pointerId) {
+        this.#endEraserGesture();
+      }
+    };
+    gesture.listeners = {
+      pointermove: onMove,
+      pointerup: onEnd,
+      pointercancel: onEnd,
+      lostpointercapture: onEnd,
+    };
+    for (const [type, listener] of Object.entries(gesture.listeners)) {
+      this.div.addEventListener(type, listener);
+    }
+    try {
+      this.div.setPointerCapture(event.pointerId);
+    } catch {}
+    this.#eraseAlong(gesture, event.clientX, event.clientY);
+  }
+
+  #endEraserGesture() {
+    const gesture = this.#eraserGesture;
+    if (!gesture) {
+      return;
+    }
+    this.#eraserGesture = null;
+    for (const [type, listener] of Object.entries(gesture.listeners)) {
+      this.div?.removeEventListener(type, listener);
+    }
+    try {
+      if (this.div?.hasPointerCapture(gesture.pointerId)) {
+        this.div.releasePointerCapture(gesture.pointerId);
+      }
+    } catch {}
+    // One undoable command per gesture (editors were already removed).
+    this.#uiManager.eraseEditors(gesture.erased);
+  }
+
+  /**
+   * Erase every editor whose geometry intersects the pointer segment from
+   * the previous event to (x, y). Editors are removed immediately for
+   * visual feedback; the undo command is registered at gesture end.
+   */
+  #eraseAlong(gesture, x, y) {
+    const x0 = gesture.lastX,
+      y0 = gesture.lastY;
+    gesture.lastX = x;
+    gesture.lastY = y;
+    for (const editor of this.#editors.values()) {
+      if (
+        gesture.erasedSet.has(editor) ||
+        !editor.div ||
+        !editor.isAttachedToDOM ||
+        this.#uiManager.canEditEditor?.(editor) === false
+      ) {
+        continue;
+      }
+      const geometry = this.#eraserGeometry(gesture, editor);
+      if (!geometry) {
+        continue;
+      }
+      const reach = gesture.radius + geometry.halfWidth;
+      const { rect } = geometry;
+      if (
+        !AnnotationEditorLayer.#segmentIntersectsRect(
+          x0,
+          y0,
+          x,
+          y,
+          rect.left - reach,
+          rect.top - reach,
+          rect.right + reach,
+          rect.bottom + reach
+        )
+      ) {
+        continue;
+      }
+      if (geometry.points) {
+        // Stroke-precise test: the editor box of a diagonal stroke is
+        // mostly empty space, so a box hit alone must not erase it.
+        let hit = false;
+        const reachSq = reach ** 2;
+        const { points } = geometry;
+        for (let i = 0; i < points.length; i += 2) {
+          if (
+            AnnotationEditorLayer.#segmentDistanceSq(
+              points[i],
+              points[i + 1],
+              x0,
+              y0,
+              x,
+              y
+            ) <= reachSq
+          ) {
+            hit = true;
+            break;
+          }
+        }
+        if (!hit) {
+          continue;
+        }
+      }
+      gesture.erased.push(editor);
+      gesture.erasedSet.add(editor);
+      editor.remove();
+    }
+  }
+
+  /**
+   * Client-space geometry of an editor, cached per gesture. Drawing
+   * editors (ink/highlighter) additionally get their rendered SVG path
+   * sampled so hits are stroke-precise; other editors are their box.
+   */
+  #eraserGeometry(gesture, editor) {
+    let geometry = gesture.geometries.get(editor);
+    if (geometry !== undefined) {
+      return geometry;
+    }
+    geometry = {
+      rect: editor.div.getBoundingClientRect(),
+      halfWidth: 0,
+      points: null,
+    };
+    if (editor._drawId !== null && editor._drawId !== undefined) {
+      const root = this.drawLayer?.getSVGRoot(editor._drawId);
+      const path = root?.querySelector("path");
+      if (path) {
+        // With vector-effect: non-scaling-stroke the root's stroke-width
+        // attribute is the rendered thickness in CSS pixels.
+        geometry.halfWidth =
+          (parseFloat(root.getAttribute("stroke-width")) || 0) / 2;
+        geometry.points = AnnotationEditorLayer.#samplePath(path);
+      }
+    }
+    gesture.geometries.set(editor, geometry);
+    return geometry;
+  }
+
+  static #samplePath(path) {
+    let total, ctm;
+    try {
+      total = path.getTotalLength();
+      ctm = path.getScreenCTM();
+    } catch {
+      return null;
+    }
+    if (!ctm || !Number.isFinite(total)) {
+      return null;
+    }
+    // Sample roughly every 4 CSS pixels along the rendered stroke.
+    const scale = Math.hypot(ctm.a, ctm.b) || 1;
+    const step = 4 / scale;
+    const count = Math.min(Math.ceil(total / step) + 1, 1000);
+    const points = [];
+    for (let i = 0; i < count; i++) {
+      const p = path.getPointAtLength(Math.min(i * step, total));
+      const sp = new DOMPoint(p.x, p.y).matrixTransform(ctm);
+      points.push(sp.x, sp.y);
+    }
+    return points;
+  }
+
+  // Liang-Barsky: does the segment intersect the (inflated) box?
+  static #segmentIntersectsRect(x0, y0, x1, y1, left, top, right, bottom) {
+    let t0 = 0,
+      t1 = 1;
+    const dx = x1 - x0,
+      dy = y1 - y0;
+    for (const [p, q] of [
+      [-dx, x0 - left],
+      [dx, right - x0],
+      [-dy, y0 - top],
+      [dy, bottom - y0],
+    ]) {
+      if (p === 0) {
+        if (q < 0) {
+          return false;
+        }
+        continue;
+      }
+      const r = q / p;
+      if (p < 0) {
+        if (r > t1) {
+          return false;
+        }
+        if (r > t0) {
+          t0 = r;
+        }
+      } else {
+        if (r < t0) {
+          return false;
+        }
+        if (r < t1) {
+          t1 = r;
+        }
+      }
+    }
+    return true;
+  }
+
+  // Squared distance from point (px, py) to segment (x0, y0)-(x1, y1).
+  static #segmentDistanceSq(px, py, x0, y0, x1, y1) {
+    const dx = x1 - x0,
+      dy = y1 - y0;
+    const lenSq = dx * dx + dy * dy;
+    const t = MathClamp(
+      lenSq ? ((px - x0) * dx + (py - y0) * dy) / lenSq : 0,
+      0,
+      1
+    );
+    const qx = x0 + t * dx - px,
+      qy = y0 + t * dy - py;
+    return qx * qx + qy * qy;
   }
 
   attach(editor) {
@@ -1202,6 +1488,7 @@ class AnnotationEditorLayer {
    */
   destroy() {
     this.disableClick();
+    this.disableEraser();
     this.commitOrRemove();
     if (this.#uiManager.getActive()?.parent === this) {
       // We need to commit the current editor before destroying the layer.

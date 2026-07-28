@@ -85,6 +85,9 @@ const AnnotationEditorType = {
   // Ink-pipeline editor styled as a free highlight (multiply blend);
   // replaces textLayer-driven highlight creation for stroke drawing.
   HIGHLIGHTER: 17,
+  // Mode without an editor class: pointer gestures delete every annotation
+  // they touch (whole-editor object eraser, no stroke splitting).
+  ERASER: 18,
   SIGNATURE: 101,
   COMMENT: 102,
 };
@@ -109,6 +112,9 @@ const AnnotationEditorParamsType = {
   // ink tool's color/thickness (nor vice versa).
   HIGHLIGHTER_COLOR: 51,
   HIGHLIGHTER_THICKNESS: 52,
+  // Eraser hit diameter in CSS pixels (stored on the ui manager, not
+  // broadcast to editors — the eraser has no editor class).
+  ERASER_SIZE: 53,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
