@@ -30,6 +30,8 @@ class TouchManager {
 
   #onPinchEnd;
 
+  #onPanning;
+
   #pinchListeners = null;
 
   #pointerDownListeners = null;
@@ -47,6 +49,7 @@ class TouchManager {
     onPinchStart = null,
     onPinching = null,
     onPinchEnd = null,
+    onPanning = null,
     signal,
   }) {
     this.#container = container;
@@ -55,6 +58,7 @@ class TouchManager {
     this.#onPinchStart = onPinchStart;
     this.#onPinching = onPinching;
     this.#onPinchEnd = onPinchEnd;
+    this.#onPanning = onPanning;
     this.#touchManagerAC = new AbortController();
     this.#signal = AbortSignal.any([signal, this.#touchManagerAC.signal]);
 
@@ -171,6 +175,19 @@ class TouchManager {
       touch0Y: touch0.screenY,
       touch1X: touch1.screenX,
       touch1Y: touch1.screenY,
+      // Gesture-start reference: intent (pan vs pinch) is decided by which
+      // cumulative motion — midpoint travel or finger-distance change —
+      // dominates once either passes the threshold, then latched for the
+      // whole gesture. Real fingers dragging in parallel always tremble
+      // more than the pinch threshold (35/devicePixelRatio CSS px, ~12px
+      // on phones), so a threshold alone misreads pans as pinches.
+      startDistance: Math.hypot(
+        touch1.screenX - touch0.screenX,
+        touch1.screenY - touch0.screenY
+      ),
+      startMidX: (touch0.screenX + touch1.screenX) / 2,
+      startMidY: (touch0.screenY + touch1.screenY) / 2,
+      mode: null,
     };
   }
 
@@ -202,17 +219,48 @@ class TouchManager {
 
     const distance = Math.hypot(currGapX, currGapY) || 1;
     const pDistance = Math.hypot(prevGapX, prevGapY) || 1;
-    if (
-      !this.#isPinching &&
-      Math.abs(pDistance - distance) <= TouchManager.MIN_TOUCH_DISTANCE_TO_PINCH
-    ) {
-      return;
+
+    const midX = (screen0X + screen1X) / 2;
+    const midY = (screen0Y + screen1Y) / 2;
+    const panX = midX - (pTouch0X + pTouch1X) / 2;
+    const panY = midY - (pTouch0Y + pTouch1Y) / 2;
+
+    if (!touchInfo.mode) {
+      // Undecided yet: once enough motion accumulated, latch the gesture's
+      // intent. Fingers moving together -> pan (like the common notes apps
+      // — the view can be scrolled without leaving a drawing mode, where a
+      // single finger is the tool); fingers spreading/closing -> pinch
+      // zoom. The decision is biased toward pan: finger-distance tremor
+      // during a two-finger drag routinely reaches ~20 CSS px, so zoom
+      // must CLEARLY dominate — and the decision distance is absolute CSS
+      // px (tremor is a property of fingers, not of devicePixelRatio,
+      // which MIN_TOUCH_DISTANCE_TO_PINCH divides by).
+      const panTravel = Math.hypot(
+        midX - touchInfo.startMidX,
+        midY - touchInfo.startMidY
+      );
+      const distanceChange = Math.abs(distance - touchInfo.startDistance);
+      if (Math.max(panTravel, distanceChange) <= 30) {
+        touchInfo.touch0X = screen0X;
+        touchInfo.touch0Y = screen0Y;
+        touchInfo.touch1X = screen1X;
+        touchInfo.touch1Y = screen1Y;
+        return;
+      }
+      touchInfo.mode = distanceChange > 1.5 * panTravel ? "pinch" : "pan";
     }
 
     touchInfo.touch0X = screen0X;
     touchInfo.touch0Y = screen0Y;
     touchInfo.touch1X = screen1X;
     touchInfo.touch1Y = screen1Y;
+
+    if (touchInfo.mode === "pan") {
+      if (panX || panY) {
+        this.#onPanning?.(panX, panY);
+      }
+      return;
+    }
 
     if (!this.#isPinching) {
       // Start pinching.
@@ -222,7 +270,7 @@ class TouchManager {
       return;
     }
 
-    const origin = [(screen0X + screen1X) / 2, (screen0Y + screen1Y) / 2];
+    const origin = [midX, midY];
     this.#onPinching?.(origin, pDistance, distance);
   }
 
