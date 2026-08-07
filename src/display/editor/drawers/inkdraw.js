@@ -130,6 +130,23 @@ class InkDrawOutliner {
 
   end(x, y) {
     const change = this.add(x, y);
+    // The bezier scheme ends the curve at the midpoint of the two last
+    // points, half a segment short of where the pointer stopped. Duplicate
+    // the final point so the curve — and its projecting line cap — reaches
+    // the real end position: in the live path here, in the InkDrawOutline
+    // rebuilt from the points at commit time, and on peers deserializing
+    // those points.
+    if (this.#points.length >= 6) {
+      const [x1, y1, x2, y2] = this.#last.subarray(2, 6);
+      this.#points.push(x2, y2);
+      this.#last.set([x1, y1, x2, y2, x2, y2], 0);
+      this.#line.push(...Outline.createBezierPoints(x1, y1, x2, y2, x2, y2));
+      return {
+        path: {
+          d: this.toSVGPath(),
+        },
+      };
+    }
     if (change) {
       return change;
     }
