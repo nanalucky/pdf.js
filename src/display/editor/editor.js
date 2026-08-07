@@ -1597,10 +1597,25 @@ class AnnotationEditor {
       this.#prevDragY = event.clientY;
       this.#dragPointerId = event.pointerId;
       this.#dragPointerType = event.pointerType;
+      // Real clicks jitter a pixel or two between down and up. Without a
+      // threshold that jitter starts a drag session, which swallows the
+      // click: pointerup then never reaches #selectOnPointerEvent, so a
+      // click on a selected freetext could not enter edit mode (and the
+      // editor was nudged as a bonus). Below the threshold the gesture
+      // stays a click; crossing it commits to a real drag.
+      const dragStartX = event.clientX;
+      const dragStartY = event.clientY;
+      const dragThreshold = event.pointerType === "mouse" ? 3 : 8;
       window.addEventListener(
         "pointermove",
         e => {
           if (!hasDraggingStarted) {
+            if (
+              Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY) <=
+              dragThreshold
+            ) {
+              return;
+            }
             hasDraggingStarted = true;
             this._uiManager.toggleComment(
               this,
