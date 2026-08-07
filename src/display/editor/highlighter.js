@@ -34,9 +34,13 @@ class HighlighterDrawingOptions extends InkDrawingOptions {
     super(viewerParameters);
     super.updateProperties({
       // Free-highlight default look: pastel yellow at full opacity — the
-      // multiply blend is what keeps the text readable underneath
+      // multiply blend is what keeps the text readable underneath. Square
+      // (projecting) caps give the band a square head and tail that extend
+      // half the band width past the drag's end points: the finished line
+      // covers exactly what the app's centered square cursor covered.
       stroke: "#FFFF98",
       "stroke-width": 12,
+      "stroke-linecap": "square",
     });
   }
 
@@ -44,24 +48,6 @@ class HighlighterDrawingOptions extends InkDrawingOptions {
     const clone = new HighlighterDrawingOptions(this._viewParameters);
     clone.updateAll(this);
     return clone;
-  }
-}
-
-// Like a physical highlighter, the band is laid ABOVE the pointer: its
-// bottom edge tracks the pointer position (the line in the highlighter
-// cursor, the text baseline you drag along), instead of being centered on
-// it. The shift is applied to the input points, so the serialized geometry
-// needs no special handling anywhere else.
-class HighlighterDrawOutliner extends InkDrawOutliner {
-  #halfThickness;
-
-  constructor(x, y, parentWidth, parentHeight, rotation, thickness, halfThickness) {
-    super(x, y - halfThickness, parentWidth, parentHeight, rotation, thickness);
-    this.#halfThickness = halfThickness;
-  }
-
-  add(x, y) {
-    return super.add(x, y - this.#halfThickness);
   }
 }
 
@@ -94,19 +80,15 @@ class HighlighterEditor extends InkEditor {
 
   /** @inheritdoc */
   static createDrawerInstance(x, y, parentWidth, parentHeight, rotation) {
-    const thickness = this._defaultDrawingOptions["stroke-width"];
-    const halfThickness =
-      (thickness *
-        (this._defaultDrawingOptions._viewParameters?.realScale ?? 1)) /
-      2;
-    const drawer = new HighlighterDrawOutliner(
+    // The band is centered on the pointer (like the ink stroke), matching
+    // the centered square cursor and the screen-share overlay highlighter
+    const drawer = new InkDrawOutliner(
       x,
       y,
       parentWidth,
       parentHeight,
       rotation,
-      thickness,
-      halfThickness
+      this._defaultDrawingOptions["stroke-width"]
     );
     drawer.isHighlighter = true;
     return drawer;
