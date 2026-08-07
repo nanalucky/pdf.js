@@ -517,6 +517,14 @@ class FreeTextEditor extends AnnotationEditor {
   enterInEditMode() {
     this.enableEditMode();
     this.editorDiv.focus();
+    // Caret at the end of the existing content, matching the screen-share
+    // overlay's text editor (focus alone leaves it at the start)
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(this.editorDiv);
+    range.collapse(/* toStart = */ false);
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
 
   /** @inheritdoc */
