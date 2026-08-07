@@ -104,7 +104,14 @@ class AnnotationEditorLayer {
 
   #uiManager;
 
-  static _initialized = false;
+  // The ui manager the editor-type statics were last initialized against.
+  // Upstream initializes them once per page lifetime, but this app opens and
+  // closes viewers repeatedly: the statics (e.g. _defaultDrawingOptions) would
+  // stay bound to the FIRST viewer's viewParameters forever, so later viewers
+  // would scale stroke widths with a dead viewer's realScale (typically the
+  // tiny scale its collapsing container had at close time — near-invisible
+  // strokes). Re-initialize whenever a layer belongs to a new ui manager.
+  static _initializedUiManager = null;
 
   static #editorTypes = new Map(
     [
@@ -134,8 +141,8 @@ class AnnotationEditorLayer {
     renderForms,
   }) {
     const editorTypes = [...AnnotationEditorLayer.#editorTypes.values()];
-    if (!AnnotationEditorLayer._initialized) {
-      AnnotationEditorLayer._initialized = true;
+    if (AnnotationEditorLayer._initializedUiManager !== uiManager) {
+      AnnotationEditorLayer._initializedUiManager = uiManager;
       for (const editorType of editorTypes) {
         editorType.initialize(l10n, uiManager);
       }
