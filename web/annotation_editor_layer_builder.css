@@ -634,6 +634,55 @@
   user-select: auto;
 }
 
+/* Move band shown while editing: straddles the border half in / half out so
+   the text can be grabbed and moved without leaving edit mode (same
+   affordance as the app's screen-share text box). Sits above the editable
+   but below the resizers. */
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand {
+  --freetext-moveband-size: 12px;
+
+  position: absolute;
+  cursor: move;
+  touch-action: none;
+  z-index: 2;
+}
+
+@media (any-pointer: coarse) {
+  .annotationEditorLayer .freeTextEditor .freeTextMoveBand {
+    --freetext-moveband-size: 22px;
+  }
+}
+
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.top,
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.bottom {
+  left: 0;
+  right: 0;
+  height: var(--freetext-moveband-size);
+}
+
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.top {
+  top: calc(var(--freetext-moveband-size) / -2);
+}
+
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.bottom {
+  bottom: calc(var(--freetext-moveband-size) / -2);
+}
+
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.left,
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.right {
+  top: 0;
+  bottom: 0;
+  width: var(--freetext-moveband-size);
+}
+
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.left {
+  left: calc(var(--freetext-moveband-size) / -2);
+}
+
+.annotationEditorLayer .freeTextEditor .freeTextMoveBand.right {
+  right: calc(var(--freetext-moveband-size) / -2);
+}
+
 .annotationEditorLayer .inkEditor {
   width: 100%;
   height: 100%;

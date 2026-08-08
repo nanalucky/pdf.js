@@ -1553,6 +1553,15 @@ class AnnotationEditor {
     this.#selectOnPointerEvent(event);
   }
 
+  /**
+   * Start a drag session from a subclass-owned handle (e.g. the freetext
+   * move band shown while editing): the same session a pointerdown on a
+   * draggable selected editor would start.
+   */
+  _startDragSession(event) {
+    this.#setUpDragSession(event);
+  }
+
   #selectOnPointerEvent(event) {
     const { isMac } = FeatureTest.platform;
     if (

@@ -43,6 +43,8 @@ class FreeTextEditor extends AnnotationEditor {
 
   #fontSize;
 
+  #moveBands = null;
+
   _colorPicker = null;
 
   static _freeTextDefaultContent = "";
@@ -337,7 +339,44 @@ class FreeTextEditor extends AnnotationEditor {
       signal,
     });
 
+    this.#createMoveBands();
+
     return true;
+  }
+
+  // Edge strips shown while editing so the text can be moved without leaving
+  // edit mode (same affordance as the screen-share overlay's text box): the
+  // band starts a normal drag session, and preventDefault keeps the editable
+  // focused through the drag — no blur, no commit, caret preserved.
+  #createMoveBands() {
+    if (this.#moveBands) {
+      return;
+    }
+    this.#moveBands = [];
+    for (const edge of ["top", "right", "bottom", "left"]) {
+      const band = document.createElement("div");
+      band.className = `freeTextMoveBand ${edge}`;
+      band.addEventListener("pointerdown", e => {
+        if (e.button !== 0) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        this._startDragSession(e);
+      });
+      this.div.append(band);
+      this.#moveBands.push(band);
+    }
+  }
+
+  #removeMoveBands() {
+    if (!this.#moveBands) {
+      return;
+    }
+    for (const band of this.#moveBands) {
+      band.remove();
+    }
+    this.#moveBands = null;
   }
 
   /** @inheritdoc */
@@ -350,6 +389,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = false;
     this.div.setAttribute("aria-activedescendant", this.#editorDivId);
     this._isDraggable = true;
+    this.#removeMoveBands();
 
     this.#editModeAC?.abort();
     this.#editModeAC = null;
