@@ -190,9 +190,12 @@
    mode mid-stroke). Ink and highlighter editors are draw-only — never
    clickable in any mode; strokes are erased and redrawn, not edited —
    which also keeps their selection borders out of meetings.
+   Signatures are DrawingEditors too (their div also carries .draw) but
+   must stay selectable/movable, hence the exclusion.
    (pointer-events inherits, so the editor shells cover their innards;
    .commentEditing and .getElements keep their own interaction rules.) */
-.annotationEditorLayer:not(.commentEditing, .getElements) .draw,
+.annotationEditorLayer:not(.commentEditing, .getElements)
+  .draw:not(.signatureEditor),
 .annotationEditorLayer:is(.inkEditing, .highlighterEditing, .eraserEditing)
   :is(.freeTextEditor, .stampEditor, .signatureEditor),
 .annotationEditorLayer.freetextEditing :is(.stampEditor, .signatureEditor),
