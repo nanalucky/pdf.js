@@ -299,6 +299,10 @@ class SignatureEditor extends DrawingEditor {
     this.rotate();
     this._uiManager.addToAnnotationStorage(this);
     this.setUuid(uuid);
+    // The constructor's modified event was swallowed by our override (no
+    // _drawId existed yet), so announce the completed signature now — the
+    // app's annotation sync only broadcasts editors it hears about.
+    this.dispatchModifiedEvent();
 
     this._reportTelemetry({
       action: "pdfjs.signature.inserted",
