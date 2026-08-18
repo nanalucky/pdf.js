@@ -280,7 +280,11 @@ class InkEditor extends DrawingEditor {
 
   /** @inheritdoc */
   createDrawingOptions({ color, thickness, opacity }) {
-    this._drawingOptions = InkEditor.getDefaultDrawingOptions({
+    // Resolve through the instance's class: highlighter strokes serialize as
+    // Ink annotations, and cloning InkEditor's options here gave deserialized
+    // highlights a round linecap (dots became circles) instead of the
+    // highlighter's square one.
+    this._drawingOptions = this.constructor.getDefaultDrawingOptions({
       stroke: Util.makeHexColor(...color),
       "stroke-width": thickness,
       "stroke-opacity": opacity,
