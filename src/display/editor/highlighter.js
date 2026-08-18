@@ -61,7 +61,10 @@ class HighlighterEditor extends InkEditor {
   /** @inheritdoc */
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
-    this._defaultDrawingOptions = new HighlighterDrawingOptions(
+    // Preserved across re-initializations (see InkEditor.initialize): a
+    // reset here dropped the user's thickness/color whenever another
+    // viewer constructed a layer.
+    this._defaultDrawingOptions ||= new HighlighterDrawingOptions(
       uiManager.viewParameters
     );
   }

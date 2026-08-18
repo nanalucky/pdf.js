@@ -84,7 +84,12 @@ class InkEditor extends DrawingEditor {
   /** @inheritdoc */
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
-    this._defaultDrawingOptions = new InkDrawingOptions(
+    // Keep existing options: initialize() re-runs whenever another viewer
+    // constructs a layer, and recreating them here silently reset the
+    // user-chosen thickness/color to class defaults (stroke drew at half
+    // the cursor size). The view scale is rebound per stroke in
+    // DrawingEditor.startDrawing, so no reset is needed for it either.
+    this._defaultDrawingOptions ||= new InkDrawingOptions(
       uiManager.viewParameters
     );
   }
