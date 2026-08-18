@@ -41,6 +41,17 @@ class DrawingOptions {
     this.#svgProperties[name] = value;
   }
 
+  /**
+   * Point these options at the view parameters of the app that is actually
+   * using them. The editor-class statics (and every clone made from them)
+   * are shared across viewers, so with several documents open the snapshot
+   * taken at initialize() time can belong to another viewer whose zoom
+   * differs — scaling stroke widths with the wrong scale. No-op here:
+   * only scale-aware subclasses hold view parameters.
+   * @param {Object} _viewParameters
+   */
+  updateViewParameters(_viewParameters) {}
+
   toSVGProperties() {
     const root = this.#svgProperties;
     this.#svgProperties = Object.create(null);
@@ -797,6 +808,11 @@ class DrawingEditor extends AnnotationEditor {
     parent.toggleDrawing();
     uiManager._editorUndoBar?.hide();
 
+    // Several viewers share this class's statics: make sure the stroke
+    // scales with the zoom of the viewer hosting this session, not with
+    // the zoom of whichever viewer initialized the statics last.
+    this._defaultDrawingOptions.updateViewParameters(uiManager.viewParameters);
+
     if (DrawingEditor.#currentDraw) {
       parent.drawLayer.updateProperties(
         this._currentDrawId,
@@ -994,6 +1010,10 @@ class DrawingEditor extends AnnotationEditor {
     );
     const editor = await super.deserialize(data, parent, uiManager, editorId);
     editor.createDrawingOptions(data);
+    // The options were cloned from shared class statics that may point at
+    // another viewer's view parameters (multiple documents open): rebind
+    // them to this editor's own viewer before the first scale pass.
+    editor._drawingOptions?.updateViewParameters(uiManager.viewParameters);
     editor.#createDrawOutlines({ drawOutlines });
     editor.#addToDrawLayer();
     editor.onScaleChanging();

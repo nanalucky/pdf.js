@@ -49,6 +49,15 @@ class InkDrawingOptions extends DrawingOptions {
     super.updateSVGProperty(name, value);
   }
 
+  /** @inheritdoc */
+  updateViewParameters(viewParameters) {
+    if (viewParameters) {
+      this._viewParameters = viewParameters;
+    }
+    // Recompute the scaled stroke width with the current view's scale.
+    this.updateSVGProperty("stroke-width");
+  }
+
   clone() {
     const clone = new InkDrawingOptions(this._viewParameters);
     clone.updateAll(this);
