@@ -227,7 +227,13 @@ class InkDrawOutliner {
     const firstX = Outline.svgRound(this.#line[4]);
     const firstY = Outline.svgRound(this.#line[5]);
     if (this.#points.length === 2) {
-      this.#lastSVGPath = `${this.#lastSVGPath} M ${firstX} ${firstY} Z`;
+      // A single point must not become a zero-length closed subpath ("M x y
+      // Z"): whether the square/round cap of such a path is painted — and at
+      // what size — differs between rasterizers (Firefox paints the full
+      // cap, Chromium's GPU backends can paint it smaller or not at all).
+      // A centered micro-segment (4/10000 of the page) is visually identical
+      // and gives every engine a well-defined open subpath with two caps.
+      this.#lastSVGPath = `${this.#lastSVGPath} M ${firstX - 2} ${firstY} l4 0`;
       return this.#lastSVGPath;
     }
 
@@ -370,11 +376,16 @@ class InkDrawOutline extends Outline {
   toSVGPath() {
     const buffer = [];
     for (const { line } of this.#lines) {
-      buffer.push(`M${Outline.svgRound(line[4])} ${Outline.svgRound(line[5])}`);
       if (line.length === 6) {
-        buffer.push("Z");
+        // Dots as centered micro-segments, not zero-length closed subpaths —
+        // cap painting for the latter is engine-dependent (see the drawing
+        // counterpart in InkDrawOutliner.toSVGPath).
+        buffer.push(
+          `M${Outline.svgRound(line[4]) - 2} ${Outline.svgRound(line[5])}l4 0`
+        );
         continue;
       }
+      buffer.push(`M${Outline.svgRound(line[4])} ${Outline.svgRound(line[5])}`);
       if (line.length === 12 && isNaN(line[6])) {
         buffer.push(
           `L${Outline.svgRound(line[10])} ${Outline.svgRound(line[11])}`
