@@ -2551,6 +2551,10 @@ class AnnotationEditorUIManager {
       this.addEditor(editor);
       this.addToAnnotationStorage(editor);
     }
+    // An editor (re)appearing through undo of a delete/erase or through a
+    // paste must reach the peers: nothing else on these paths dispatches
+    // the modified event.
+    editor.dispatchModifiedEvent();
   }
 
   /**

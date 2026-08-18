@@ -376,6 +376,22 @@ class AnnotationEditor {
    * @param {Object} params
    */
   addCommands(params) {
+    // Undo/redo re-run these closures long after this registration-time
+    // dispatch: wrap them so every re-execution also reaches the peers
+    // (most setter closures don't dispatch on their own).
+    const { cmd, undo } = params;
+    if (cmd) {
+      params.cmd = () => {
+        cmd();
+        this.dispatchModifiedEvent();
+      };
+    }
+    if (undo) {
+      params.undo = () => {
+        undo();
+        this.dispatchModifiedEvent();
+      };
+    }
     this._uiManager.addCommands(params);
     this.dispatchModifiedEvent();
   }
